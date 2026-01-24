@@ -1,18 +1,41 @@
 import { Play } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import heroOperators from "@/assets/hero-operators.jpg";
 
 const HeroSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"]
+  });
+
+  // Parallax transforms
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const backgroundScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.8], [0.3, 0.8]);
+
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden film-grain">
-      {/* Background Image */}
-      <div 
+    <section ref={sectionRef} className="relative min-h-screen flex items-center overflow-hidden film-grain">
+      {/* Parallax Background Image */}
+      <motion.div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroOperators})` }}
+        style={{ 
+          backgroundImage: `url(${heroOperators})`,
+          y: backgroundY,
+          scale: backgroundScale
+        }}
       >
-        {/* Gradient Overlay */}
+        {/* Gradient Overlay with dynamic opacity */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-transparent"
+          style={{ opacity: overlayOpacity }}
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-      </div>
+      </motion.div>
 
       {/* Red Light Beam Effect */}
       <div className="absolute top-0 right-1/3 w-32 h-full bg-gradient-to-b from-crimson/30 via-crimson/10 to-transparent blur-3xl animate-pulse-glow" />
@@ -36,8 +59,11 @@ const HeroSection = () => {
       {/* Smoke Effect */}
       <div className="absolute bottom-0 left-0 w-96 h-64 bg-gradient-to-t from-wine/20 to-transparent blur-3xl animate-smoke" />
 
-      {/* Content */}
-      <div className="container mx-auto px-6 pt-20 lg:pt-0 relative z-10">
+      {/* Parallax Content */}
+      <motion.div 
+        className="container mx-auto px-6 pt-20 lg:pt-0 relative z-10"
+        style={{ y: contentY, opacity: contentOpacity }}
+      >
         <div className="max-w-2xl">
           {/* Title */}
           <h1 
@@ -96,7 +122,7 @@ const HeroSection = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Bottom Gradient Fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
