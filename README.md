@@ -1,73 +1,89 @@
-# Welcome to your Lovable project
+# Tactical Esports Tournament Platform
 
-## Project info
+A full-featured esports tournament management platform built for tactical FPS games. Create teams, organize tournaments, and compete in a professional esports environment.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+### 🎮 Tournament Management
+- **Create & Host Tournaments** - Any registered user can create and manage their own tournaments
+- **Flexible Team Sizes** - Support for 1v1 duels up to 5v5 squad battles
+- **Multiple Bracket Types** - Single elimination, double elimination, round robin, and Swiss formats
+- **Registration System** - Team registration with deadlines and check-in periods
+- **Match Scheduling** - Automated match creation with dispute resolution system
+- **Livestream Integration** - Embed YouTube/Twitch streams directly on tournament pages
 
-There are several ways of editing your application.
+### 👥 Team System
+- **Squad Creation** - Create teams with custom names, tags, and logos
+- **Member Management** - Invite players, assign roles (leader/member)
+- **Team Profiles** - Showcase your squad with descriptions and branding
 
-**Use Lovable**
+### 🎯 User Profiles
+- **Operator Profiles** - Custom usernames, avatars, and bios
+- **Gaming Stats** - Track your competitive statistics (JSONB storage for flexibility)
+- **Tournament History** - View past and upcoming tournament participation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 🛡️ Security & Authentication
+- **Secure Auth** - Email-based authentication with auto-confirm
+- **Row Level Security** - Data protected at the database level
+- **Role-Based Access** - Tournament creators, team owners, and members have appropriate permissions
 
-Changes made via Lovable will be committed automatically to this repo.
+## How It Works
 
-**Use your preferred IDE**
+### For Players
+1. **Enlist** - Create your operator profile with username and credentials
+2. **Form a Squad** - Create or join a team with fellow players
+3. **Register** - Sign up your team for open tournaments
+4. **Compete** - Check in, play matches, and climb the brackets
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### For Tournament Organizers
+1. **Create Tournament** - Set name, game mode, team size, and bracket type
+2. **Configure Details** - Add rules, prize pools, and registration deadlines
+3. **Open Registration** - Let teams sign up before the deadline
+4. **Manage Matches** - Update scores, resolve disputes, and crown champions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Database Architecture
+The platform uses a relational database with:
+- `profiles` - User data linked to authentication
+- `teams` & `team_members` - Squad management with roles
+- `tournaments` - Event configuration and status tracking
+- `tournament_registrations` - Team sign-ups with seeding
+- `matches` - Bracket progression and scoring
+- `match_disputes` - Fair play resolution system
 
-Follow these steps:
+## Tech Stack
+
+- **Frontend**: React, Vite, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Lovable Cloud (Supabase)
+- **Animation**: Framer Motion
+- **Forms**: React Hook Form + Zod validation
+
+## Getting Started
+
+### Using Lovable
+Visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+
+### Local Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click Share → Publish.
 
-**Use GitHub Codespaces**
+## Custom Domain
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Navigate to Project > Settings > Domains to connect your own domain. Requires a paid Lovable plan.
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Read more: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
