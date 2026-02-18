@@ -18,6 +18,7 @@ import Leaderboards from "./pages/Leaderboards";
 import WalletPage from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import TournamentManage from "./pages/TournamentManage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,11 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/tournaments/:id" element={<TournamentDetail />} />
+            <Route path="/tournaments/:id/manage" element={
+              <ProtectedRoute>
+                <TournamentManage />
+              </ProtectedRoute>
+            } />
             <Route path="/teams" element={<Teams />} />
             <Route path="/teams/create" element={
               <ProtectedRoute>

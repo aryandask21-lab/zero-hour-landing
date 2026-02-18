@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoles } from "@/hooks/useRoles";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +41,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  Trophy
 } from "lucide-react";
 
 interface BanRecord {
@@ -94,6 +95,7 @@ export default function Admin() {
   const [bans, setBans] = useState<BanRecord[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [tournaments, setTournaments] = useState<{ id: string; name: string; status: string; team_size: number; max_teams: number | null; created_at: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
@@ -180,9 +182,16 @@ export default function Admin() {
         .order("created_at", { ascending: false })
         .limit(100);
 
+      // Fetch all tournaments
+      const { data: tournamentsData } = await supabase
+        .from("tournaments")
+        .select("id, name, status, team_size, max_teams, created_at")
+        .order("created_at", { ascending: false });
+
       setBans(enrichedBans);
       setDisputes(disputesData || []);
       setUsers(usersData || []);
+      setTournaments(tournamentsData || []);
     } catch (error) {
       console.error("Error fetching admin data:", error);
     } finally {
@@ -376,6 +385,9 @@ export default function Admin() {
                 </TabsTrigger>
                 <TabsTrigger value="users" className="data-[state=active]:bg-crimson data-[state=active]:text-white">
                   Users
+                </TabsTrigger>
+                <TabsTrigger value="tournaments" className="data-[state=active]:bg-crimson data-[state=active]:text-white">
+                  Tournaments ({tournaments.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -672,6 +684,52 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
+              </TabsContent>
+
+              {/* Tournaments Tab */}
+              <TabsContent value="tournaments" className="space-y-4">
+                <div className="flex justify-end mb-4">
+                  <Button asChild className="btn-primary-tactical">
+                    <Link to="/tournaments/create">
+                      <Trophy className="w-4 h-4 mr-2" /> CREATE TOURNAMENT
+                    </Link>
+                  </Button>
+                </div>
+                {tournaments.length === 0 ? (
+                  <div className="bg-card/30 border border-border p-12 text-center">
+                    <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No tournaments yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tournaments.map(t => (
+                      <div key={t.id} className="bg-card/50 border border-border p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Trophy className="w-5 h-5 text-crimson" />
+                          <div>
+                            <p className="text-white font-heading">{t.name}</p>
+                            <p className="text-muted-foreground text-xs">{t.team_size}v{t.team_size} • {new Date(t.created_at).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs px-2 py-1 uppercase tracking-wider ${
+                            t.status === "registration_open" ? "bg-green-500/20 text-green-400" :
+                            t.status === "in_progress" ? "bg-crimson/20 text-crimson" :
+                            t.status === "completed" ? "bg-muted text-muted-foreground" :
+                            "bg-yellow-500/20 text-yellow-400"
+                          }`}>
+                            {t.status.replace(/_/g, " ")}
+                          </span>
+                          <Button asChild size="sm" variant="outline">
+                            <Link to={`/tournaments/${t.id}/manage`}>
+                              Manage
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </ScrollReveal>

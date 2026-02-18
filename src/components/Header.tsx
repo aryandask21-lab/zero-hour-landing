@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, Shield } from "lucide-react";
+import { Menu, X, LogOut, User, Shield, Trophy, BarChart3, Wallet, Bell } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoles } from "@/hooks/useRoles";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useWallet } from "@/hooks/useWallet";
 
 const navLinks = [
   { name: "HOME", href: "/" },
   { name: "TOURNAMENTS", href: "/tournaments" },
   { name: "TEAMS", href: "/teams" },
+  { name: "LEADERBOARDS", href: "/leaderboards" },
 ];
 
 const Header = () => {
@@ -15,6 +18,8 @@ const Header = () => {
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
   const { isAdmin } = useRoles();
+  const { unreadCount } = useNotifications();
+  const { wallet } = useWallet();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/30">
@@ -54,6 +59,16 @@ const Header = () => {
                     <span className="text-sm font-medium">ADMIN</span>
                   </Link>
                 )}
+                <Link to="/wallet" className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors">
+                  <Wallet size={16} />
+                  <span className="text-sm">{wallet?.balance ?? 0}</span>
+                </Link>
+                <Link to="/dashboard" className="relative flex items-center gap-1 text-muted-foreground hover:text-white transition-colors">
+                  <Bell size={16} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-2 w-4 h-4 bg-crimson rounded-full text-[10px] flex items-center justify-center text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                  )}
+                </Link>
                 <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors">
                   <User size={16} />
                   <span className="text-sm">{profile?.username || "Dashboard"}</span>
