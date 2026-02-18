@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -18,7 +19,6 @@ import WalletPage from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,18 +31,41 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/tournaments" element={<Tournaments />} />
-            <Route path="/tournaments/create" element={<CreateTournament />} />
+            <Route path="/tournaments/create" element={
+              <ProtectedRoute>
+                <CreateTournament />
+              </ProtectedRoute>
+            } />
             <Route path="/tournaments/:id" element={<TournamentDetail />} />
-            
             <Route path="/teams" element={<Teams />} />
-            <Route path="/teams/create" element={<CreateTeam />} />
+            <Route path="/teams/create" element={
+              <ProtectedRoute>
+                <CreateTeam />
+              </ProtectedRoute>
+            } />
             <Route path="/leaderboards" element={<Leaderboards />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/wallet" element={
+              <ProtectedRoute>
+                <WalletPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
             <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <Admin />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
