@@ -531,6 +531,60 @@ export type Database = {
         }
         Relationships: []
       }
+      player_match_stats: {
+        Row: {
+          assists: number
+          created_at: string
+          deaths: number
+          id: string
+          is_mvp: boolean
+          kills: number
+          match_id: string
+          player_id: string
+          score: number
+          team_id: string
+        }
+        Insert: {
+          assists?: number
+          created_at?: string
+          deaths?: number
+          id?: string
+          is_mvp?: boolean
+          kills?: number
+          match_id: string
+          player_id: string
+          score?: number
+          team_id: string
+        }
+        Update: {
+          assists?: number
+          created_at?: string
+          deaths?: number
+          id?: string
+          is_mvp?: boolean
+          kills?: number
+          match_id?: string
+          player_id?: string
+          score?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_match_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_match_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prize_distributions: {
         Row: {
           created_at: string | null

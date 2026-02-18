@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X, LogOut, User, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRoles } from "@/hooks/useRoles";
 
 const navLinks = [
   { name: "HOME", href: "/" },
@@ -13,6 +14,7 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
+  const { isAdmin } = useRoles();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/30">
@@ -43,6 +45,15 @@ const Header = () => {
           <div className="hidden lg:flex items-center gap-4">
             {user ? (
               <>
+                {isAdmin() && (
+                  <Link 
+                    to="/admin" 
+                    className={`flex items-center gap-2 text-crimson hover:text-crimson/80 transition-colors ${location.pathname === '/admin' ? 'text-white' : ''}`}
+                  >
+                    <Shield size={16} />
+                    <span className="text-sm font-medium">ADMIN</span>
+                  </Link>
+                )}
                 <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors">
                   <User size={16} />
                   <span className="text-sm">{profile?.username || "Dashboard"}</span>
@@ -84,6 +95,16 @@ const Header = () => {
             ))}
             {user ? (
               <>
+                {isAdmin() && (
+                  <Link 
+                    to="/admin" 
+                    className="nav-link text-crimson flex items-center gap-2" 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield size={16} />
+                    ADMIN PANEL
+                  </Link>
+                )}
                 <Link to="/dashboard" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
                   DASHBOARD
                 </Link>
