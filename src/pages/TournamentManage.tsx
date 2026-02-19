@@ -39,7 +39,20 @@ import {
   BarChart3,
   Star,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
 
 interface Tournament {
   id: string;
@@ -411,19 +424,22 @@ export default function TournamentManage() {
     if (!tournament) return null;
     const s = tournament.status;
 
-    const transitions: Record<string, { label: string; next: string; icon: React.ReactNode; color: string }[]> = {
-      draft: [{ label: "Open Registration", next: "registration_open", icon: <Play size={14} />, color: "bg-green-600 hover:bg-green-700" }],
-      registration_open: [{ label: "Close Registration", next: "registration_closed", icon: <XCircle size={14} />, color: "bg-yellow-600 hover:bg-yellow-700" }],
+    const transitions: Record<string, { label: string; next: string; icon: React.ReactNode; color: string; confirm?: string; warning?: string }[]> = {
+      draft: [{ label: "Open Registration", next: "registration_open", icon: <Play size={14} />, color: "bg-green-600 hover:bg-green-700", confirm: "This will make the tournament publicly visible and open for team registrations." }],
+      registration_open: [{ label: "Close Registration", next: "registration_closed", icon: <XCircle size={14} />, color: "bg-yellow-600 hover:bg-yellow-700", confirm: "No more teams will be able to register after this." }],
       registration_closed: [
-        { label: "Start Check-In", next: "check_in", icon: <CheckCircle size={14} />, color: "bg-blue-600 hover:bg-blue-700" },
-        { label: "Start Tournament", next: "in_progress", icon: <Swords size={14} />, color: "bg-crimson hover:bg-primary" },
+        { label: "Start Check-In", next: "check_in", icon: <CheckCircle size={14} />, color: "bg-blue-600 hover:bg-blue-700", confirm: "Teams will be prompted to check in." },
+        { label: "Start Tournament", next: "in_progress", icon: <Swords size={14} />, color: "bg-crimson hover:bg-primary", confirm: "The tournament will go live. Make sure matches are generated first.", warning: matches.length === 0 ? "No matches generated yet! Generate a bracket before starting." : undefined },
       ],
-      check_in: [{ label: "Start Tournament", next: "in_progress", icon: <Swords size={14} />, color: "bg-crimson hover:bg-primary" }],
-      in_progress: [{ label: "Complete Tournament", next: "completed", icon: <Trophy size={14} />, color: "bg-green-600 hover:bg-green-700" }],
+      check_in: [{ label: "Start Tournament", next: "in_progress", icon: <Swords size={14} />, color: "bg-crimson hover:bg-primary", confirm: "The tournament will begin. This cannot be undone.", warning: matches.length === 0 ? "No matches generated yet! Generate a bracket before starting." : undefined }],
+      in_progress: [{ label: "Complete Tournament", next: "completed", icon: <Trophy size={14} />, color: "bg-green-600 hover:bg-green-700", confirm: "This will finalize all results and make the tournament read-only.", warning: pendingMatches.length > 0 ? `${pendingMatches.length} match(es) still pending!` : undefined }],
     };
 
     return transitions[s] || [];
   };
+
+  const pendingMatches = matches.filter(m => m.status !== "completed" && m.status !== "bye" && m.team1_id && m.team2_id);
+  const completedMatches = matches.filter(m => m.status === "completed");
 
   if (isLoading) {
     return (
@@ -438,8 +454,6 @@ export default function TournamentManage() {
   const statusActions = getStatusActions();
   const isKnockout = tournament.bracket_type === "single_elimination" || tournament.bracket_type === "double_elimination";
   const isLeague = tournament.bracket_type === "round_robin" || tournament.bracket_type === "swiss";
-  const pendingMatches = matches.filter(m => m.status !== "completed" && m.status !== "bye" && m.team1_id && m.team2_id);
-  const completedMatches = matches.filter(m => m.status === "completed");
 
   return (
     <div className="min-h-screen bg-background">
@@ -453,31 +467,49 @@ export default function TournamentManage() {
           </button>
 
           <ScrollReveal>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="font-heading text-3xl md:text-4xl text-white">{tournament.name}</h1>
-                <p className="text-muted-foreground">Tournament Management</p>
+            <div className="space-y-6 mb-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="font-heading text-3xl md:text-4xl text-foreground">{tournament.name}</h1>
+                  <p className="text-muted-foreground">Tournament Management</p>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {statusActions && statusActions.map(action => (
+                    <AlertDialog key={action.next}>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" className={action.color}>
+                          {action.icon}
+                          <span className="ml-1">{action.label}</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border-border">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="font-heading text-foreground">{action.label}?</AlertDialogTitle>
+                          <AlertDialogDescription className="space-y-2">
+                            <span>{action.confirm || `Change status to "${action.next.replace(/_/g, " ")}".`}</span>
+                            {action.warning && (
+                              <span className="flex items-center gap-2 text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 p-2 rounded-sm mt-2">
+                                <AlertTriangle className="w-4 h-4 shrink-0" />
+                                {action.warning}
+                              </span>
+                            )}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
+                          <AlertDialogAction className="bg-crimson hover:bg-primary" onClick={() => updateTournamentStatus(action.next)}>
+                            Confirm
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className={`text-xs px-3 py-1 uppercase tracking-wider ${
-                  tournament.status === "registration_open" ? "bg-green-500/20 text-green-400" :
-                  tournament.status === "in_progress" ? "bg-crimson/20 text-crimson" :
-                  tournament.status === "completed" ? "bg-muted text-muted-foreground" :
-                  "bg-yellow-500/20 text-yellow-400"
-                }`}>
-                  {tournament.status.replace(/_/g, " ")}
-                </span>
-                {statusActions && statusActions.map(action => (
-                  <Button
-                    key={action.next}
-                    size="sm"
-                    className={action.color}
-                    onClick={() => updateTournamentStatus(action.next)}
-                  >
-                    {action.icon}
-                    <span className="ml-1">{action.label}</span>
-                  </Button>
-                ))}
+
+              {/* Status Stepper */}
+              <div className="bg-card/50 border border-border p-4">
+                <TournamentStatusStepper currentStatus={tournament.status} />
               </div>
             </div>
           </ScrollReveal>
