@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
+import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, Users, Trophy, Settings, UserPlus, Calendar, Target, Video } from "lucide-react";
@@ -213,6 +214,11 @@ export default function TournamentDetail() {
                     <span className={`text-xs px-3 py-1 uppercase tracking-wider ${getStatusColor(tournament.status)}`}>
                       {tournament.status.replace(/_/g, " ")}
                     </span>
+                  </div>
+
+                  {/* Status Stepper */}
+                  <div className="mb-6">
+                    <TournamentStatusStepper currentStatus={tournament.status} compact />
                   </div>
 
                   {tournament.description && (

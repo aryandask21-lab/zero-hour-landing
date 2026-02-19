@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
+import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trophy, Calendar, Users, Search, Plus, Target } from "lucide-react";
@@ -22,11 +23,14 @@ interface Tournament {
   creator_id: string;
 }
 
+type StatusFilter = "all" | "upcoming" | "ongoing" | "completed";
+
 export default function Tournaments() {
   const { user } = useAuth();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
     fetchTournaments();
@@ -49,10 +53,19 @@ export default function Tournaments() {
     }
   };
 
-  const filteredTournaments = tournaments.filter(t =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.game_mode?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getStatusGroup = (status: string): StatusFilter => {
+    if (["registration_open", "registration_closed", "check_in"].includes(status)) return "upcoming";
+    if (status === "in_progress") return "ongoing";
+    if (status === "completed" || status === "cancelled") return "completed";
+    return "upcoming";
+  };
+
+  const filteredTournaments = tournaments.filter(t => {
+    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.game_mode?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = statusFilter === "all" || getStatusGroup(t.status) === statusFilter;
+    return matchesSearch && matchesFilter;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -70,6 +83,13 @@ export default function Tournaments() {
         return "bg-muted text-muted-foreground";
     }
   };
+
+  const filterTabs: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all", label: "All", count: tournaments.length },
+    { key: "upcoming", label: "Upcoming", count: tournaments.filter(t => getStatusGroup(t.status) === "upcoming").length },
+    { key: "ongoing", label: "Ongoing", count: tournaments.filter(t => getStatusGroup(t.status) === "ongoing").length },
+    { key: "completed", label: "Completed", count: tournaments.filter(t => getStatusGroup(t.status) === "completed").length },
+  ];
 
   if (isLoading) {
     return (
@@ -111,17 +131,34 @@ export default function Tournaments() {
             </div>
           </ScrollReveal>
 
-          {/* Search */}
+          {/* Search & Filters */}
           <ScrollReveal delay={0.1}>
-            <div className="relative mb-8">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search tournaments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-card/50 border-border focus:border-crimson"
-              />
+            <div className="space-y-4 mb-8">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search tournaments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 bg-card/50 border-border focus:border-crimson"
+                />
+              </div>
+              <div className="flex gap-2">
+                {filterTabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setStatusFilter(tab.key)}
+                    className={`px-4 py-2 text-xs font-heading uppercase tracking-wider transition-all border ${
+                      statusFilter === tab.key
+                        ? "bg-crimson/20 border-crimson text-crimson"
+                        : "bg-card/50 border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+                    }`}
+                  >
+                    {tab.label} ({tab.count})
+                  </button>
+                ))}
+              </div>
             </div>
           </ScrollReveal>
 
@@ -192,6 +229,10 @@ export default function Tournaments() {
                         )}
                       </div>
 
+                      {/* Mini status stepper */}
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <TournamentStatusStepper currentStatus={tournament.status} compact />
+                      </div>
                       {tournament.prize_pool && (
                         <div className="mt-4 pt-4 border-t border-border">
                           <p className="text-crimson font-heading text-lg">
