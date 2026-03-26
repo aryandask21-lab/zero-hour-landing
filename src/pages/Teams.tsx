@@ -7,7 +7,8 @@ import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Users, Search, Plus, Target } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Users, Search, Plus, Target, Trophy, TrendingUp } from "lucide-react";
 
 interface Team {
   id: string;
@@ -17,6 +18,8 @@ interface Team {
   description: string | null;
   max_members: number;
   owner_id: string;
+  member_count?: number;
+  tournament_count?: number;
 }
 
 export default function Teams() {
@@ -38,7 +41,37 @@ export default function Teams() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setTeams(data || []);
+
+      // Fetch member counts for all teams
+      const teamIds = (data || []).map(t => t.id);
+      
+      const { data: memberCounts } = await supabase
+        .from("team_members")
+        .select("team_id")
+        .in("team_id", teamIds);
+
+      const { data: regCounts } = await supabase
+        .from("tournament_registrations")
+        .select("team_id")
+        .in("team_id", teamIds);
+
+      const memberMap: Record<string, number> = {};
+      (memberCounts || []).forEach(m => {
+        memberMap[m.team_id] = (memberMap[m.team_id] || 0) + 1;
+      });
+
+      const tournamentMap: Record<string, number> = {};
+      (regCounts || []).forEach(r => {
+        tournamentMap[r.team_id] = (tournamentMap[r.team_id] || 0) + 1;
+      });
+
+      const enrichedTeams = (data || []).map(t => ({
+        ...t,
+        member_count: memberMap[t.id] || 0,
+        tournament_count: tournamentMap[t.id] || 0,
+      }));
+
+      setTeams(enrichedTeams);
     } catch (error) {
       console.error("Error fetching teams:", error);
     } finally {
@@ -76,7 +109,7 @@ export default function Teams() {
                   TEAMS
                 </h1>
                 <p className="text-muted-foreground">
-                  Browse and join tactical squads
+                  Browse and join tactical squads • {teams.length} teams registered
                 </p>
               </div>
               
@@ -97,7 +130,7 @@ export default function Teams() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search teams..."
+                placeholder="Search teams by name or tag..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 bg-card/50 border-border focus:border-crimson"
@@ -141,26 +174,43 @@ export default function Teams() {
                           <h3 className="font-heading text-xl text-white group-hover:text-crimson transition-colors truncate">
                             {team.tag && <span className="text-crimson">[{team.tag}]</span>} {team.name}
                           </h3>
-                          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                            <Users size={14} />
-                            <span>{team.max_members} members max</span>
+                          <div className="flex items-center gap-3 text-muted-foreground text-sm mt-1">
+                            <span className="flex items-center gap-1">
+                              <Users size={13} />
+                              {team.member_count}/{team.max_members}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Trophy size={13} />
+                              {team.tournament_count} tournaments
+                            </span>
                           </div>
                         </div>
                       </div>
 
                       {team.description && (
-                        <p className="text-muted-foreground text-sm line-clamp-2">
+                        <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
                           {team.description}
                         </p>
                       )}
 
-                      {user && team.owner_id === user.id && (
-                        <div className="mt-4 pt-4 border-t border-border">
-                          <span className="text-xs text-crimson uppercase tracking-wider">
-                            You own this team
-                          </span>
-                        </div>
-                      )}
+                      {/* Team Stats Bar */}
+                      <div className="flex items-center gap-2 pt-4 border-t border-border">
+                        {team.member_count < team.max_members && (
+                          <Badge className="bg-green-500/20 text-green-400 border-0 text-[10px]">
+                            RECRUITING
+                          </Badge>
+                        )}
+                        {team.member_count >= team.max_members && (
+                          <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
+                            FULL
+                          </Badge>
+                        )}
+                        {user && team.owner_id === user.id && (
+                          <Badge className="bg-crimson/20 text-crimson border-0 text-[10px]">
+                            YOUR TEAM
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 ))}

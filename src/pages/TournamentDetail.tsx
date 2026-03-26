@@ -6,9 +6,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
+import { TournamentBracket } from "@/components/TournamentBracket";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Shield, Users, Trophy, Settings, UserPlus, Calendar, Target, Video } from "lucide-react";
+import { ArrowLeft, Shield, Users, Trophy, Settings, UserPlus, Calendar, Target, Video, Clock } from "lucide-react";
 
 interface Tournament {
   id: string;
@@ -36,9 +38,39 @@ interface Registration {
   team: { id: string; name: string; tag: string | null };
 }
 
+function useCountdown(targetDate: string | null) {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
+
+  useEffect(() => {
+    if (!targetDate) return;
+    const target = new Date(targetDate).getTime();
+
+    const update = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
+        return;
+      }
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+        expired: false,
+      });
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  return timeLeft;
+}
+
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [tournament, setTournament] = useState<Tournament | null>(null);
@@ -49,35 +81,40 @@ export default function TournamentDetail() {
 
   const isCreator = user && tournament?.creator_id === user.id;
 
+  // Countdown to start or registration deadline
+  const countdownTarget = tournament?.status === 'registration_open'
+    ? tournament.registration_deadline || tournament.start_time
+    : ['registration_closed', 'check_in'].includes(tournament?.status || '')
+      ? tournament?.start_time
+      : null;
+
+  const countdown = useCountdown(countdownTarget);
+
+  const countdownLabel = tournament?.status === 'registration_open'
+    ? (tournament.registration_deadline ? 'Registration closes in' : 'Tournament starts in')
+    : 'Tournament starts in';
+
   useEffect(() => {
-    if (id) {
-      fetchTournament();
-    }
+    if (id) fetchTournament();
   }, [id]);
 
   useEffect(() => {
-    if (user) {
-      fetchUserTeams();
-    }
+    if (user) fetchUserTeams();
   }, [user]);
 
   const fetchTournament = async () => {
     try {
-      const { data: tournamentData, error: tournamentError } = await supabase
+      const { data: tournamentData, error } = await supabase
         .from("tournaments")
         .select(`*, creator:profiles!tournaments_creator_id_fkey(username)`)
         .eq("id", id)
         .maybeSingle();
 
-      if (tournamentError) throw tournamentError;
-      if (!tournamentData) {
-        navigate("/tournaments");
-        return;
-      }
+      if (error) throw error;
+      if (!tournamentData) { navigate("/tournaments"); return; }
 
       setTournament(tournamentData);
 
-      // Fetch registrations
       const { data: regData } = await supabase
         .from("tournament_registrations")
         .select(`*, team:teams(id, name, tag)`)
@@ -86,11 +123,7 @@ export default function TournamentDetail() {
       setRegistrations(regData || []);
     } catch (error) {
       console.error("Error fetching tournament:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load tournament",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to load tournament", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -98,43 +131,23 @@ export default function TournamentDetail() {
 
   const fetchUserTeams = async () => {
     if (!user) return;
-
-    const { data } = await supabase
-      .from("teams")
-      .select("id, name, tag")
-      .eq("owner_id", user.id);
-
+    const { data } = await supabase.from("teams").select("id, name, tag").eq("owner_id", user.id);
     setUserTeams(data || []);
   };
 
   const handleRegister = async (teamId: string) => {
     if (!user || !tournament) return;
-
     setIsRegistering(true);
     try {
       const { error } = await supabase
         .from("tournament_registrations")
-        .insert({
-          tournament_id: tournament.id,
-          team_id: teamId,
-          registered_by: user.id
-        });
-
+        .insert({ tournament_id: tournament.id, team_id: teamId, registered_by: user.id });
       if (error) throw error;
-
-      toast({
-        title: "Registered",
-        description: "Your team has been registered for this tournament"
-      });
-
+      toast({ title: "Registered", description: "Your team has been registered for this tournament" });
       fetchTournament();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to register. Please try again.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive"
-      });
+      const message = error instanceof Error ? error.message : "Failed to register.";
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setIsRegistering(false);
     }
@@ -176,6 +189,7 @@ export default function TournamentDetail() {
 
   const registeredTeamIds = registrations.map(r => r.team_id);
   const availableTeamsToRegister = userTeams.filter(t => !registeredTeamIds.includes(t.id));
+  const regProgress = tournament.max_teams ? (registrations.length / tournament.max_teams) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,7 +197,6 @@ export default function TournamentDetail() {
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
-          {/* Back Button */}
           <button
             onClick={() => navigate("/tournaments")}
             className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors mb-8"
@@ -203,9 +216,7 @@ export default function TournamentDetail() {
                         <Trophy className="w-8 h-8 text-crimson" />
                       </div>
                       <div>
-                        <h1 className="font-heading text-3xl text-white">
-                          {tournament.name}
-                        </h1>
+                        <h1 className="font-heading text-3xl text-white">{tournament.name}</h1>
                         <p className="text-muted-foreground">
                           Hosted by <span className="text-crimson">{tournament.creator?.username || "Unknown"}</span>
                         </p>
@@ -216,15 +227,12 @@ export default function TournamentDetail() {
                     </span>
                   </div>
 
-                  {/* Status Stepper */}
                   <div className="mb-6">
                     <TournamentStatusStepper currentStatus={tournament.status} compact />
                   </div>
 
                   {tournament.description && (
-                    <p className="text-muted-foreground mb-6">
-                      {tournament.description}
-                    </p>
+                    <p className="text-muted-foreground mb-6">{tournament.description}</p>
                   )}
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -246,17 +254,32 @@ export default function TournamentDetail() {
                     </div>
                   </div>
 
+                  {/* Registration Progress Bar */}
+                  {tournament.max_teams && (
+                    <div className="mt-4">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>{registrations.length} registered</span>
+                        <span>{tournament.max_teams} max</span>
+                      </div>
+                      <Progress value={regProgress} className="h-2" />
+                      {regProgress >= 75 && regProgress < 100 && (
+                        <p className="text-yellow-400 text-xs mt-1">⚡ Filling up fast — {tournament.max_teams - registrations.length} spots left!</p>
+                      )}
+                      {regProgress >= 100 && (
+                        <p className="text-red-400 text-xs mt-1">Tournament is full</p>
+                      )}
+                    </div>
+                  )}
+
                   {tournament.prize_pool && (
                     <div className="mt-4 pt-4 border-t border-border">
-                      <p className="text-crimson font-heading text-xl">
-                        Prize Pool: {tournament.prize_pool}
-                      </p>
+                      <p className="text-crimson font-heading text-xl">Prize Pool: {tournament.prize_pool}</p>
                     </div>
                   )}
                 </div>
               </ScrollReveal>
 
-              {/* Livestream Embed */}
+              {/* Livestream */}
               {tournament.livestream_url && (
                 <ScrollReveal delay={0.1}>
                   <div className="bg-card/50 border border-border p-6">
@@ -264,47 +287,23 @@ export default function TournamentDetail() {
                       <Video className="w-5 h-5 text-crimson" />
                       <h2 className="font-heading text-xl text-white">LIVESTREAM</h2>
                     </div>
-                    
                     {(() => {
-                      const youtubeEmbed = getYouTubeEmbedUrl(tournament.livestream_url!);
-                      const twitchEmbed = getTwitchEmbedUrl(tournament.livestream_url!);
-
-                      if (youtubeEmbed) {
-                        return (
-                          <div className="aspect-video">
-                            <iframe
-                              src={youtubeEmbed}
-                              className="w-full h-full"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            />
-                          </div>
-                        );
-                      }
-
-                      if (twitchEmbed) {
-                        return (
-                          <div className="aspect-video">
-                            <iframe
-                              src={twitchEmbed}
-                              className="w-full h-full"
-                              allowFullScreen
-                            />
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <a
-                          href={tournament.livestream_url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-crimson hover:underline"
-                        >
-                          Watch Stream →
-                        </a>
-                      );
+                      const yt = getYouTubeEmbedUrl(tournament.livestream_url!);
+                      const tw = getTwitchEmbedUrl(tournament.livestream_url!);
+                      if (yt) return <div className="aspect-video"><iframe src={yt} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>;
+                      if (tw) return <div className="aspect-video"><iframe src={tw} className="w-full h-full" allowFullScreen /></div>;
+                      return <a href={tournament.livestream_url!} target="_blank" rel="noopener noreferrer" className="text-crimson hover:underline">Watch Stream →</a>;
                     })()}
+                  </div>
+                </ScrollReveal>
+              )}
+
+              {/* Bracket */}
+              {['in_progress', 'completed'].includes(tournament.status) && (
+                <ScrollReveal delay={0.15}>
+                  <div className="bg-card/50 border border-border p-6">
+                    <h2 className="font-heading text-xl text-white mb-4">BRACKET</h2>
+                    <TournamentBracket tournamentId={tournament.id} bracketType={tournament.bracket_type || 'single_elimination'} />
                   </div>
                 </ScrollReveal>
               )}
@@ -314,9 +313,7 @@ export default function TournamentDetail() {
                 <ScrollReveal delay={0.2}>
                   <div className="bg-card/50 border border-border p-6">
                     <h2 className="font-heading text-xl text-white mb-4">RULES</h2>
-                    <div className="text-muted-foreground whitespace-pre-wrap text-sm">
-                      {tournament.rules}
-                    </div>
+                    <div className="text-muted-foreground whitespace-pre-wrap text-sm">{tournament.rules}</div>
                   </div>
                 </ScrollReveal>
               )}
@@ -325,11 +322,8 @@ export default function TournamentDetail() {
               <ScrollReveal delay={0.3}>
                 <div className="bg-card/50 border border-border p-6">
                   <h2 className="font-heading text-xl text-white mb-4">REGISTERED TEAMS</h2>
-                  
                   {registrations.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No teams registered yet
-                    </p>
+                    <p className="text-muted-foreground text-center py-8">No teams registered yet</p>
                   ) : (
                     <div className="space-y-2">
                       {registrations.map((reg, index) => (
@@ -357,11 +351,35 @@ export default function TournamentDetail() {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Countdown Timer */}
+              {countdownTarget && !countdown.expired && (
+                <ScrollReveal>
+                  <div className="bg-card/50 border border-crimson/30 p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="w-5 h-5 text-crimson" />
+                      <h3 className="font-heading text-sm text-crimson uppercase">{countdownLabel}</h3>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {[
+                        { val: countdown.days, label: 'DAYS' },
+                        { val: countdown.hours, label: 'HRS' },
+                        { val: countdown.minutes, label: 'MIN' },
+                        { val: countdown.seconds, label: 'SEC' },
+                      ].map(({ val, label }) => (
+                        <div key={label} className="bg-background/50 p-3">
+                          <p className="font-heading text-2xl text-white">{String(val).padStart(2, '0')}</p>
+                          <p className="text-muted-foreground text-[10px]">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollReveal>
+              )}
+
               {/* Schedule */}
               <ScrollReveal delay={0.1}>
                 <div className="bg-card/50 border border-border p-6">
                   <h3 className="font-heading text-lg text-white mb-4">SCHEDULE</h3>
-                  
                   <div className="space-y-4 text-sm">
                     {tournament.registration_deadline && (
                       <div className="flex items-center gap-3">
@@ -389,26 +407,18 @@ export default function TournamentDetail() {
               <ScrollReveal delay={0.2}>
                 <div className="bg-card/50 border border-border p-6 space-y-4">
                   {isCreator ? (
-                    <>
-                      <Button asChild className="w-full btn-primary-tactical">
-                        <Link to={`/tournaments/${tournament.id}/manage`}>
-                          <Settings size={16} className="mr-2" />
-                          MANAGE TOURNAMENT
-                        </Link>
-                      </Button>
-                    </>
+                    <Button asChild className="w-full btn-primary-tactical">
+                      <Link to={`/tournaments/${tournament.id}/manage`}>
+                        <Settings size={16} className="mr-2" /> MANAGE TOURNAMENT
+                      </Link>
+                    </Button>
                   ) : tournament.status === "registration_open" && user ? (
                     <>
                       {availableTeamsToRegister.length > 0 ? (
                         <div className="space-y-2">
                           <p className="text-sm text-muted-foreground mb-2">Register a team:</p>
                           {availableTeamsToRegister.map(team => (
-                            <Button
-                              key={team.id}
-                              onClick={() => handleRegister(team.id)}
-                              disabled={isRegistering}
-                              className="w-full btn-outline-tactical"
-                            >
+                            <Button key={team.id} onClick={() => handleRegister(team.id)} disabled={isRegistering} className="w-full btn-outline-tactical">
                               {team.tag && `[${team.tag}] `}{team.name}
                             </Button>
                           ))}
@@ -417,28 +427,19 @@ export default function TournamentDetail() {
                         <div className="text-center">
                           <p className="text-muted-foreground text-sm mb-2">You need a team to register</p>
                           <Button asChild className="w-full btn-outline-tactical">
-                            <Link to="/teams/create">
-                              <UserPlus size={16} className="mr-2" />
-                              CREATE TEAM
-                            </Link>
+                            <Link to="/teams/create"><UserPlus size={16} className="mr-2" /> CREATE TEAM</Link>
                           </Button>
                         </div>
                       ) : (
-                        <p className="text-center text-muted-foreground text-sm">
-                          All your teams are already registered
-                        </p>
+                        <p className="text-center text-muted-foreground text-sm">All your teams are already registered</p>
                       )}
                     </>
                   ) : !user ? (
                     <Button asChild className="w-full btn-primary-tactical">
-                      <Link to="/auth">
-                        SIGN IN TO REGISTER
-                      </Link>
+                      <Link to="/auth">SIGN IN TO REGISTER</Link>
                     </Button>
                   ) : (
-                    <p className="text-center text-muted-foreground text-sm">
-                      Registration is closed
-                    </p>
+                    <p className="text-center text-muted-foreground text-sm">Registration is closed</p>
                   )}
                 </div>
               </ScrollReveal>
