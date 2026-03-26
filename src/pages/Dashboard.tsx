@@ -92,6 +92,16 @@ export default function Dashboard() {
       ];
       const uniqueTeams = allTeams.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
 
+      // Fetch profile stats
+      const { data: pData } = await supabase
+        .from("profiles")
+        .select("elo_rating, wins, total_matches")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (pData) {
+        setProfileStats({ elo_rating: pData.elo_rating ?? 1000, wins: pData.wins ?? 0, total_matches: pData.total_matches ?? 0 });
+      }
+
       // Fetch tournaments created by user
       const { data: tournamentsData } = await supabase
         .from("tournaments")
@@ -190,7 +200,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-2">
                   <Trophy className="w-5 h-5 text-crimson/70" />
                 </div>
-                <p className="font-heading text-2xl text-white">{profile?.wins || 0}</p>
+                <p className="font-heading text-2xl text-white">{profileStats.wins}</p>
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Wins</p>
               </div>
 
@@ -198,7 +208,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-2">
                   <TrendingUp className="w-5 h-5 text-crimson/70" />
                 </div>
-                <p className="font-heading text-2xl text-white">{profile?.elo_rating || 1000}</p>
+                <p className="font-heading text-2xl text-white">{profileStats.elo_rating}</p>
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">ELO</p>
               </div>
               
@@ -206,7 +216,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-2">
                   <Swords className="w-5 h-5 text-crimson/70" />
                 </div>
-                <p className="font-heading text-2xl text-white">{profile?.total_matches || 0}</p>
+                <p className="font-heading text-2xl text-white">{profileStats.total_matches}</p>
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Matches</p>
               </div>
 
