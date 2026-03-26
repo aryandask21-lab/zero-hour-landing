@@ -50,12 +50,13 @@ export default function Dashboard() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const { notifications } = useNotifications();
-  const { balance, frozenBalance } = useWallet();
+  const { balance } = useWallet();
   const [myTeams, setMyTeams] = useState<Team[]>([]);
   const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [upcomingTournaments, setUpcomingTournaments] = useState<Tournament[]>([]);
   const [recentMatches, setRecentMatches] = useState<MatchHistory[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<MatchHistory[]>([]);
+  const [profileStats, setProfileStats] = useState({ elo_rating: 1000, wins: 0, total_matches: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
