@@ -19,6 +19,8 @@ import WalletPage from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import TournamentManage from "./pages/TournamentManage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
 
 const queryClient = new QueryClient();
 
@@ -70,8 +72,10 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute requiredRole="admin">
                 <Admin />
-              </ProtectedRoute>
+            </ProtectedRoute>
             } />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
