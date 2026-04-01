@@ -19,6 +19,8 @@ import WalletPage from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import TournamentManage from "./pages/TournamentManage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
 
 const queryClient = new QueryClient();
 
