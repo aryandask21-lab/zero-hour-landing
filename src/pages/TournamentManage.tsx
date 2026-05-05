@@ -217,6 +217,8 @@ export default function TournamentManage() {
     toast({ title: status === 'approved' ? "Approved" : "Rejected", description: `Registration ${status}` });
     fetchAll();
   };
+
+  const generateKnockoutBracket = async () => {
     const approved = registrations.filter(r => r.approval_status === 'approved');
     if (!tournament || approved.length < 2) {
       toast({ title: "Error", description: "Need at least 2 approved teams", variant: "destructive" });
