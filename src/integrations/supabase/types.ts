@@ -930,31 +930,43 @@ export type Database = {
       }
       tournament_registrations: {
         Row: {
+          approval_status: string
           check_in_status: string | null
           checked_in_at: string | null
           id: string
           registered_at: string
           registered_by: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           seed: number | null
           team_id: string
           tournament_id: string
         }
         Insert: {
+          approval_status?: string
           check_in_status?: string | null
           checked_in_at?: string | null
           id?: string
           registered_at?: string
           registered_by: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           seed?: number | null
           team_id: string
           tournament_id: string
         }
         Update: {
+          approval_status?: string
           check_in_status?: string | null
           checked_in_at?: string | null
           id?: string
           registered_at?: string
           registered_by?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           seed?: number | null
           team_id?: string
           tournament_id?: string
