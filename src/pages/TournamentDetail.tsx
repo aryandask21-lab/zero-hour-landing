@@ -191,7 +191,9 @@ export default function TournamentDetail() {
 
   const registeredTeamIds = registrations.map(r => r.team_id);
   const availableTeamsToRegister = userTeams.filter(t => !registeredTeamIds.includes(t.id));
-  const regProgress = tournament.max_teams ? (registrations.length / tournament.max_teams) * 100 : 0;
+  const approvedRegs = registrations.filter(r => r.approval_status === 'approved');
+  const pendingRegs = registrations.filter(r => r.approval_status === 'pending');
+  const regProgress = tournament.max_teams ? (approvedRegs.length / tournament.max_teams) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
