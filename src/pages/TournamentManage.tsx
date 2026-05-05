@@ -75,7 +75,10 @@ interface Registration {
   team_id: string;
   check_in_status: string;
   seed: number | null;
-  team: { id: string; name: string; tag: string | null };
+  approval_status: string;
+  rejection_reason: string | null;
+  registered_at?: string;
+  team: { id: string; name: string; tag: string | null; owner_id?: string };
 }
 
 interface Match {
@@ -180,9 +183,45 @@ export default function TournamentManage() {
     }
   };
 
+  const reviewRegistration = async (regId: string, status: 'approved' | 'rejected', reason?: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("tournament_registrations")
+      .update({
+        approval_status: status,
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+        rejection_reason: status === 'rejected' ? (reason || null) : null,
+      })
+      .eq("id", regId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const reg = registrations.find(r => r.id === regId);
+    if (reg && tournament) {
+      // Notify team owner
+      const { data: team } = await supabase.from("teams").select("owner_id, name").eq("id", reg.team_id).maybeSingle();
+      if (team?.owner_id) {
+        await supabase.from("notifications").insert({
+          user_id: team.owner_id,
+          type: status === 'approved' ? 'registration_approved' : 'registration_rejected',
+          title: status === 'approved' ? 'Registration Approved' : 'Registration Rejected',
+          message: status === 'approved'
+            ? `Your team "${team.name}" was approved for ${tournament.name}`
+            : `Your team "${team.name}" was rejected for ${tournament.name}${reason ? `: ${reason}` : ''}`,
+          link: `/tournaments/${tournament.id}`,
+        });
+      }
+    }
+    toast({ title: status === 'approved' ? "Approved" : "Rejected", description: `Registration ${status}` });
+    fetchAll();
+  };
+
   const generateKnockoutBracket = async () => {
-    if (!tournament || registrations.length < 2) {
-      toast({ title: "Error", description: "Need at least 2 teams", variant: "destructive" });
+    const approved = registrations.filter(r => r.approval_status === 'approved');
+    if (!tournament || approved.length < 2) {
+      toast({ title: "Error", description: "Need at least 2 approved teams", variant: "destructive" });
       return;
     }
     setGenerating(true);
@@ -190,7 +229,7 @@ export default function TournamentManage() {
       // Delete existing matches
       await supabase.from("matches").delete().eq("tournament_id", tournament.id);
 
-      const teams = [...registrations].sort(() => Math.random() - 0.5);
+      const teams = [...approved].sort(() => Math.random() - 0.5);
       const numTeams = teams.length;
       const totalRounds = Math.ceil(Math.log2(numTeams));
       const bracketSize = Math.pow(2, totalRounds);
@@ -262,15 +301,16 @@ export default function TournamentManage() {
   };
 
   const generateLeagueBracket = async () => {
-    if (!tournament || registrations.length < 2) {
-      toast({ title: "Error", description: "Need at least 2 teams", variant: "destructive" });
+    const approved = registrations.filter(r => r.approval_status === 'approved');
+    if (!tournament || approved.length < 2) {
+      toast({ title: "Error", description: "Need at least 2 approved teams", variant: "destructive" });
       return;
     }
     setGenerating(true);
     try {
       await supabase.from("matches").delete().eq("tournament_id", tournament.id);
 
-      const teams = registrations.map(r => r.team_id);
+      const teams = approved.map(r => r.team_id);
       const allMatches: { tournament_id: string; round: number; match_number: number; team1_id: string; team2_id: string; status: string }[] = [];
       let matchNum = 1;
       let round = 1;
@@ -682,30 +722,85 @@ export default function TournamentManage() {
             </TabsContent>
 
             {/* Teams Tab */}
-            <TabsContent value="teams" className="space-y-4">
-              {registrations.length === 0 ? (
-                <div className="bg-card/30 border border-border p-12 text-center">
-                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No teams registered yet</p>
-                </div>
-              ) : (
-                registrations.map((reg, i) => (
-                  <div key={reg.id} className="bg-card/50 border border-border p-4 flex items-center justify-between">
+            <TabsContent value="teams" className="space-y-6">
+              {(() => {
+                const pending = registrations.filter(r => r.approval_status === 'pending');
+                const approved = registrations.filter(r => r.approval_status === 'approved');
+                const rejected = registrations.filter(r => r.approval_status === 'rejected');
+
+                if (registrations.length === 0) {
+                  return (
+                    <div className="bg-card/30 border border-border p-12 text-center">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No teams registered yet</p>
+                    </div>
+                  );
+                }
+
+                const renderRow = (reg: Registration, i: number, showActions: boolean) => (
+                  <div key={reg.id} className="bg-card/50 border border-border p-4 flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-4">
                       <span className="text-muted-foreground font-mono w-8">#{i + 1}</span>
                       <span className="text-white font-heading">
                         {reg.team.tag && <span className="text-crimson">[{reg.team.tag}] </span>}
                         {reg.team.name}
                       </span>
+                      {reg.approval_status === 'rejected' && reg.rejection_reason && (
+                        <span className="text-xs text-muted-foreground italic">— {reg.rejection_reason}</span>
+                      )}
                     </div>
-                    <span className={`text-xs px-2 py-1 ${
-                      reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
-                    }`}>
-                      {reg.check_in_status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 ${
+                        reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
+                      }`}>
+                        {reg.check_in_status}
+                      </span>
+                      {showActions && (
+                        <>
+                          <Button size="sm" onClick={() => reviewRegistration(reg.id, 'approved')} className="bg-green-600 hover:bg-green-700 h-7">
+                            <CheckCircle size={14} className="mr-1" /> Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => {
+                            const reason = window.prompt("Rejection reason (optional):") || undefined;
+                            reviewRegistration(reg.id, 'rejected', reason);
+                          }} className="h-7">
+                            <XCircle size={14} className="mr-1" /> Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                ))
-              )}
+                );
+
+                return (
+                  <>
+                    <div>
+                      <h3 className="font-heading text-sm uppercase text-yellow-400 mb-2">Pending Approval ({pending.length})</h3>
+                      {pending.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">No pending registrations</p>
+                      ) : (
+                        <div className="space-y-2">{pending.map((r, i) => renderRow(r, i, true))}</div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-sm uppercase text-green-400 mb-2">Approved ({approved.length})</h3>
+                      {approved.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">No approved teams yet</p>
+                      ) : (
+                        <div className="space-y-2">{approved.map((r, i) => renderRow(r, i, false))}</div>
+                      )}
+                    </div>
+                    {rejected.length > 0 && (
+                      <div>
+                        <h3 className="font-heading text-sm uppercase text-red-400 mb-2">Rejected ({rejected.length})</h3>
+                        <div className="space-y-2">{rejected.map((r, i) => (
+                          <div key={r.id} className="opacity-60">{renderRow(r, i, false)}</div>
+                        ))}</div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </TabsContent>
 
             {/* Settings Tab */}

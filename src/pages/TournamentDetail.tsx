@@ -35,6 +35,8 @@ interface Registration {
   id: string;
   team_id: string;
   check_in_status: string;
+  approval_status: string;
+  rejection_reason: string | null;
   team: { id: string; name: string; tag: string | null };
 }
 
@@ -143,7 +145,7 @@ export default function TournamentDetail() {
         .from("tournament_registrations")
         .insert({ tournament_id: tournament.id, team_id: teamId, registered_by: user.id });
       if (error) throw error;
-      toast({ title: "Registered", description: "Your team has been registered for this tournament" });
+      toast({ title: "Registration Submitted", description: "Awaiting organizer approval." });
       fetchTournament();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to register.";
@@ -189,7 +191,9 @@ export default function TournamentDetail() {
 
   const registeredTeamIds = registrations.map(r => r.team_id);
   const availableTeamsToRegister = userTeams.filter(t => !registeredTeamIds.includes(t.id));
-  const regProgress = tournament.max_teams ? (registrations.length / tournament.max_teams) * 100 : 0;
+  const approvedRegs = registrations.filter(r => r.approval_status === 'approved');
+  const pendingRegs = registrations.filter(r => r.approval_status === 'pending');
+  const regProgress = tournament.max_teams ? (approvedRegs.length / tournament.max_teams) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -250,7 +254,10 @@ export default function TournamentDetail() {
                     </div>
                     <div className="bg-background/50 p-3">
                       <p className="text-muted-foreground text-xs uppercase">Teams</p>
-                      <p className="text-white font-heading">{registrations.length}/{tournament.max_teams || "∞"}</p>
+                      <p className="text-white font-heading">{approvedRegs.length}/{tournament.max_teams || "∞"}</p>
+                      {pendingRegs.length > 0 && (
+                        <p className="text-yellow-400 text-[10px] mt-0.5">+{pendingRegs.length} pending</p>
+                      )}
                     </div>
                   </div>
 
@@ -258,12 +265,12 @@ export default function TournamentDetail() {
                   {tournament.max_teams && (
                     <div className="mt-4">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>{registrations.length} registered</span>
+                        <span>{approvedRegs.length} approved</span>
                         <span>{tournament.max_teams} max</span>
                       </div>
                       <Progress value={regProgress} className="h-2" />
                       {regProgress >= 75 && regProgress < 100 && (
-                        <p className="text-yellow-400 text-xs mt-1">⚡ Filling up fast — {tournament.max_teams - registrations.length} spots left!</p>
+                        <p className="text-yellow-400 text-xs mt-1">⚡ Filling up fast — {tournament.max_teams - approvedRegs.length} spots left!</p>
                       )}
                       {regProgress >= 100 && (
                         <p className="text-red-400 text-xs mt-1">Tournament is full</p>
@@ -336,11 +343,22 @@ export default function TournamentDetail() {
                               {reg.team.name}
                             </span>
                           </div>
-                          <span className={`text-xs px-2 py-1 ${
-                            reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
-                          }`}>
-                            {reg.check_in_status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-1 ${
+                              reg.approval_status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                              reg.approval_status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                              'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {reg.approval_status}
+                            </span>
+                            {reg.approval_status === 'approved' && (
+                              <span className={`text-xs px-2 py-1 ${
+                                reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
+                              }`}>
+                                {reg.check_in_status}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
