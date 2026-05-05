@@ -39,17 +39,22 @@ export function DepositDialog() {
 
     setProcessing(true);
 
-    // TODO: Replace with actual Stripe checkout session creation
-    // This would call your edge function: /functions/v1/create-checkout
-    // const { data, error } = await supabase.functions.invoke('create-checkout', {
-    //   body: { credits, priceInCents: Math.round(credits * 0.01 * 100) }
-    // });
-    // if (data?.url) window.location.href = data.url;
-
-    toast({
-      title: 'Payment gateway not configured',
-      description: 'Stripe integration pending. Add your API key to enable real payments.',
+    const { data, error } = await supabase.functions.invoke('simulate-payment', {
+      body: { action: 'deposit', credits },
     });
+
+    if (error || !data?.success) {
+      toast({ title: 'Payment failed', description: error?.message ?? 'Try again.', variant: 'destructive' });
+    } else {
+      toast({
+        title: 'Payment successful (DEMO)',
+        description: `${credits.toLocaleString()} credits added to your wallet.`,
+      });
+      await refetch();
+      setOpen(false);
+      setSelectedPack(null);
+      setCustomAmount('');
+    }
 
     setProcessing(false);
   };
