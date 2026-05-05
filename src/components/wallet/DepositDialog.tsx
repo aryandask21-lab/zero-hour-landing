@@ -28,6 +28,7 @@ export function DepositDialog() {
   const [customAmount, setCustomAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
+  const { refetch } = useWallet();
 
   const handleCheckout = async () => {
     const credits = selectedPack !== null ? CREDIT_PACKS[selectedPack].amount : parseInt(customAmount);
