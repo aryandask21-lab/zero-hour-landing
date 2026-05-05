@@ -254,7 +254,10 @@ export default function TournamentDetail() {
                     </div>
                     <div className="bg-background/50 p-3">
                       <p className="text-muted-foreground text-xs uppercase">Teams</p>
-                      <p className="text-white font-heading">{registrations.length}/{tournament.max_teams || "∞"}</p>
+                      <p className="text-white font-heading">{approvedRegs.length}/{tournament.max_teams || "∞"}</p>
+                      {pendingRegs.length > 0 && (
+                        <p className="text-yellow-400 text-[10px] mt-0.5">+{pendingRegs.length} pending</p>
+                      )}
                     </div>
                   </div>
 
@@ -262,12 +265,12 @@ export default function TournamentDetail() {
                   {tournament.max_teams && (
                     <div className="mt-4">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>{registrations.length} registered</span>
+                        <span>{approvedRegs.length} approved</span>
                         <span>{tournament.max_teams} max</span>
                       </div>
                       <Progress value={regProgress} className="h-2" />
                       {regProgress >= 75 && regProgress < 100 && (
-                        <p className="text-yellow-400 text-xs mt-1">⚡ Filling up fast — {tournament.max_teams - registrations.length} spots left!</p>
+                        <p className="text-yellow-400 text-xs mt-1">⚡ Filling up fast — {tournament.max_teams - approvedRegs.length} spots left!</p>
                       )}
                       {regProgress >= 100 && (
                         <p className="text-red-400 text-xs mt-1">Tournament is full</p>
