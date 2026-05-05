@@ -24,6 +24,7 @@ export function WithdrawDialog({ balance }: WithdrawDialogProps) {
   const [amount, setAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
+  const { refetch } = useWallet();
 
   const handleWithdraw = async () => {
     const credits = parseInt(amount);
