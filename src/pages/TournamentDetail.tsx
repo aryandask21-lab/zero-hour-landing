@@ -35,6 +35,8 @@ interface Registration {
   id: string;
   team_id: string;
   check_in_status: string;
+  approval_status: string;
+  rejection_reason: string | null;
   team: { id: string; name: string; tag: string | null };
 }
 
