@@ -184,8 +184,9 @@ export default function TournamentManage() {
   };
 
   const generateKnockoutBracket = async () => {
-    if (!tournament || registrations.length < 2) {
-      toast({ title: "Error", description: "Need at least 2 teams", variant: "destructive" });
+    const approved = registrations.filter(r => r.approval_status === 'approved');
+    if (!tournament || approved.length < 2) {
+      toast({ title: "Error", description: "Need at least 2 approved teams", variant: "destructive" });
       return;
     }
     setGenerating(true);
@@ -193,7 +194,7 @@ export default function TournamentManage() {
       // Delete existing matches
       await supabase.from("matches").delete().eq("tournament_id", tournament.id);
 
-      const teams = [...registrations].sort(() => Math.random() - 0.5);
+      const teams = [...approved].sort(() => Math.random() - 0.5);
       const numTeams = teams.length;
       const totalRounds = Math.ceil(Math.log2(numTeams));
       const bracketSize = Math.pow(2, totalRounds);
