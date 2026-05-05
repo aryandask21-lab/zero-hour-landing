@@ -124,7 +124,7 @@ export function DepositDialog() {
         </Button>
 
         <p className="text-xs text-center text-muted-foreground mt-2">
-          Secured by Stripe. You will be redirected to complete payment.
+          DEMO MODE — no real payment is processed. Credits are added instantly.
         </p>
       </DialogContent>
     </Dialog>
