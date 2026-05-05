@@ -722,30 +722,85 @@ export default function TournamentManage() {
             </TabsContent>
 
             {/* Teams Tab */}
-            <TabsContent value="teams" className="space-y-4">
-              {registrations.length === 0 ? (
-                <div className="bg-card/30 border border-border p-12 text-center">
-                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No teams registered yet</p>
-                </div>
-              ) : (
-                registrations.map((reg, i) => (
-                  <div key={reg.id} className="bg-card/50 border border-border p-4 flex items-center justify-between">
+            <TabsContent value="teams" className="space-y-6">
+              {(() => {
+                const pending = registrations.filter(r => r.approval_status === 'pending');
+                const approved = registrations.filter(r => r.approval_status === 'approved');
+                const rejected = registrations.filter(r => r.approval_status === 'rejected');
+
+                if (registrations.length === 0) {
+                  return (
+                    <div className="bg-card/30 border border-border p-12 text-center">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No teams registered yet</p>
+                    </div>
+                  );
+                }
+
+                const renderRow = (reg: Registration, i: number, showActions: boolean) => (
+                  <div key={reg.id} className="bg-card/50 border border-border p-4 flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-4">
                       <span className="text-muted-foreground font-mono w-8">#{i + 1}</span>
                       <span className="text-white font-heading">
                         {reg.team.tag && <span className="text-crimson">[{reg.team.tag}] </span>}
                         {reg.team.name}
                       </span>
+                      {reg.approval_status === 'rejected' && reg.rejection_reason && (
+                        <span className="text-xs text-muted-foreground italic">— {reg.rejection_reason}</span>
+                      )}
                     </div>
-                    <span className={`text-xs px-2 py-1 ${
-                      reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
-                    }`}>
-                      {reg.check_in_status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 ${
+                        reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
+                      }`}>
+                        {reg.check_in_status}
+                      </span>
+                      {showActions && (
+                        <>
+                          <Button size="sm" onClick={() => reviewRegistration(reg.id, 'approved')} className="bg-green-600 hover:bg-green-700 h-7">
+                            <CheckCircle size={14} className="mr-1" /> Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => {
+                            const reason = window.prompt("Rejection reason (optional):") || undefined;
+                            reviewRegistration(reg.id, 'rejected', reason);
+                          }} className="h-7">
+                            <XCircle size={14} className="mr-1" /> Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                ))
-              )}
+                );
+
+                return (
+                  <>
+                    <div>
+                      <h3 className="font-heading text-sm uppercase text-yellow-400 mb-2">Pending Approval ({pending.length})</h3>
+                      {pending.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">No pending registrations</p>
+                      ) : (
+                        <div className="space-y-2">{pending.map((r, i) => renderRow(r, i, true))}</div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-sm uppercase text-green-400 mb-2">Approved ({approved.length})</h3>
+                      {approved.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">No approved teams yet</p>
+                      ) : (
+                        <div className="space-y-2">{approved.map((r, i) => renderRow(r, i, false))}</div>
+                      )}
+                    </div>
+                    {rejected.length > 0 && (
+                      <div>
+                        <h3 className="font-heading text-sm uppercase text-red-400 mb-2">Rejected ({rejected.length})</h3>
+                        <div className="space-y-2">{rejected.map((r, i) => (
+                          <div key={r.id} className="opacity-60">{renderRow(r, i, false)}</div>
+                        ))}</div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </TabsContent>
 
             {/* Settings Tab */}
