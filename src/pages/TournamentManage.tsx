@@ -75,7 +75,10 @@ interface Registration {
   team_id: string;
   check_in_status: string;
   seed: number | null;
-  team: { id: string; name: string; tag: string | null };
+  approval_status: string;
+  rejection_reason: string | null;
+  registered_at?: string;
+  team: { id: string; name: string; tag: string | null; owner_id?: string };
 }
 
 interface Match {
