@@ -343,11 +343,22 @@ export default function TournamentDetail() {
                               {reg.team.name}
                             </span>
                           </div>
-                          <span className={`text-xs px-2 py-1 ${
-                            reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
-                          }`}>
-                            {reg.check_in_status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-1 ${
+                              reg.approval_status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                              reg.approval_status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                              'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {reg.approval_status}
+                            </span>
+                            {reg.approval_status === 'approved' && (
+                              <span className={`text-xs px-2 py-1 ${
+                                reg.check_in_status === "checked_in" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
+                              }`}>
+                                {reg.check_in_status}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
