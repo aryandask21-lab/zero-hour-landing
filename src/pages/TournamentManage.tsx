@@ -183,7 +183,40 @@ export default function TournamentManage() {
     }
   };
 
-  const generateKnockoutBracket = async () => {
+  const reviewRegistration = async (regId: string, status: 'approved' | 'rejected', reason?: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("tournament_registrations")
+      .update({
+        approval_status: status,
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+        rejection_reason: status === 'rejected' ? (reason || null) : null,
+      })
+      .eq("id", regId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const reg = registrations.find(r => r.id === regId);
+    if (reg && tournament) {
+      // Notify team owner
+      const { data: team } = await supabase.from("teams").select("owner_id, name").eq("id", reg.team_id).maybeSingle();
+      if (team?.owner_id) {
+        await supabase.from("notifications").insert({
+          user_id: team.owner_id,
+          type: status === 'approved' ? 'registration_approved' : 'registration_rejected',
+          title: status === 'approved' ? 'Registration Approved' : 'Registration Rejected',
+          message: status === 'approved'
+            ? `Your team "${team.name}" was approved for ${tournament.name}`
+            : `Your team "${team.name}" was rejected for ${tournament.name}${reason ? `: ${reason}` : ''}`,
+          link: `/tournaments/${tournament.id}`,
+        });
+      }
+    }
+    toast({ title: status === 'approved' ? "Approved" : "Rejected", description: `Registration ${status}` });
+    fetchAll();
+  };
     const approved = registrations.filter(r => r.approval_status === 'approved');
     if (!tournament || approved.length < 2) {
       toast({ title: "Error", description: "Need at least 2 approved teams", variant: "destructive" });
