@@ -266,15 +266,16 @@ export default function TournamentManage() {
   };
 
   const generateLeagueBracket = async () => {
-    if (!tournament || registrations.length < 2) {
-      toast({ title: "Error", description: "Need at least 2 teams", variant: "destructive" });
+    const approved = registrations.filter(r => r.approval_status === 'approved');
+    if (!tournament || approved.length < 2) {
+      toast({ title: "Error", description: "Need at least 2 approved teams", variant: "destructive" });
       return;
     }
     setGenerating(true);
     try {
       await supabase.from("matches").delete().eq("tournament_id", tournament.id);
 
-      const teams = registrations.map(r => r.team_id);
+      const teams = approved.map(r => r.team_id);
       const allMatches: { tournament_id: string; round: number; match_number: number; team1_id: string; team2_id: string; status: string }[] = [];
       let matchNum = 1;
       let round = 1;
