@@ -145,7 +145,7 @@ export default function TournamentDetail() {
         .from("tournament_registrations")
         .insert({ tournament_id: tournament.id, team_id: teamId, registered_by: user.id });
       if (error) throw error;
-      toast({ title: "Registered", description: "Your team has been registered for this tournament" });
+      toast({ title: "Registration Submitted", description: "Awaiting organizer approval." });
       fetchTournament();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to register.";
