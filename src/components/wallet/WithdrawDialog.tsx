@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useWallet } from '@/hooks/useWallet';
 
 interface WithdrawDialogProps {
   balance: number;
@@ -22,6 +24,7 @@ export function WithdrawDialog({ balance }: WithdrawDialogProps) {
   const [amount, setAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
+  const { refetch } = useWallet();
 
   const handleWithdraw = async () => {
     const credits = parseInt(amount);
@@ -36,13 +39,21 @@ export function WithdrawDialog({ balance }: WithdrawDialogProps) {
 
     setProcessing(true);
 
-    // TODO: Replace with actual withdrawal logic
-    // await supabase.functions.invoke('request-withdrawal', { body: { credits } });
-
-    toast({
-      title: 'Withdrawal system not configured',
-      description: 'Stripe payout integration pending. Add your API key to enable withdrawals.',
+    const { data, error } = await supabase.functions.invoke('simulate-payment', {
+      body: { action: 'withdraw', credits },
     });
+
+    if (error || !data?.success) {
+      toast({ title: 'Withdrawal failed', description: error?.message ?? 'Try again.', variant: 'destructive' });
+    } else {
+      toast({
+        title: 'Withdrawal processed (DEMO)',
+        description: `${credits.toLocaleString()} credits withdrawn.`,
+      });
+      await refetch();
+      setOpen(false);
+      setAmount('');
+    }
 
     setProcessing(false);
   };
