@@ -945,6 +945,48 @@ export default function TournamentManage() {
         </DialogContent>
       </Dialog>
 
+      {/* Schedule match dialog */}
+      <Dialog open={!!schedulingMatch} onOpenChange={(o) => !o && setSchedulingMatch(null)}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-white">Schedule Match</DialogTitle>
+          </DialogHeader>
+          {schedulingMatch && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                R{schedulingMatch.round} M{schedulingMatch.match_number} —{" "}
+                {schedulingMatch.team1?.name || "TBD"} vs {schedulingMatch.team2?.name || "TBD"}
+              </p>
+              <div>
+                <label className="text-sm text-muted-foreground">Date &amp; time</label>
+                <Input
+                  type="datetime-local"
+                  value={scheduleValue}
+                  onChange={(e) => setScheduleValue(e.target.value)}
+                  className="bg-background border-border mt-1"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveSchedule} className="flex-1 bg-crimson hover:bg-primary">
+                  Save Time
+                </Button>
+                {schedulingMatch.scheduled_time && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setScheduleValue("");
+                      handleSaveSchedule();
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
