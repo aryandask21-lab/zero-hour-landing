@@ -121,48 +121,6 @@ export type Database = {
           },
         ]
       }
-      leaderboards: {
-        Row: {
-          game: string
-          id: string
-          losses: number | null
-          points: number | null
-          rank: number | null
-          season: string | null
-          tournaments_played: number | null
-          tournaments_won: number | null
-          updated_at: string | null
-          user_id: string
-          wins: number | null
-        }
-        Insert: {
-          game: string
-          id?: string
-          losses?: number | null
-          points?: number | null
-          rank?: number | null
-          season?: string | null
-          tournaments_played?: number | null
-          tournaments_won?: number | null
-          updated_at?: string | null
-          user_id: string
-          wins?: number | null
-        }
-        Update: {
-          game?: string
-          id?: string
-          losses?: number | null
-          points?: number | null
-          rank?: number | null
-          season?: string | null
-          tournaments_played?: number | null
-          tournaments_won?: number | null
-          updated_at?: string | null
-          user_id?: string
-          wins?: number | null
-        }
-        Relationships: []
-      }
       map_pool: {
         Row: {
           created_at: string | null
