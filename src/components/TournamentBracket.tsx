@@ -29,6 +29,20 @@ export function TournamentBracket({ tournamentId, bracketType = "single_eliminat
 
   useEffect(() => {
     fetchMatches();
+
+    // Live score updates — subscribe to any change on this tournament's matches
+    const channel = supabase
+      .channel(`bracket_${tournamentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "matches", filter: `tournament_id=eq.${tournamentId}` },
+        () => fetchMatches()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tournamentId]);
 
   const fetchMatches = async () => {
