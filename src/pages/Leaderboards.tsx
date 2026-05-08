@@ -75,21 +75,8 @@ export default function Leaderboards() {
       setTopPlayers(players as TopPlayer[]);
     }
 
-    // Fetch game-specific leaderboards
-    let lbQuery = supabase
-      .from('leaderboards')
-      .select('*')
-      .order('points', { ascending: false })
-      .limit(100);
-
-    if (selectedGame !== 'All Games') {
-      lbQuery = lbQuery.eq('game', selectedGame);
-    }
-
-    const { data: lb } = await lbQuery;
-    if (lb) {
-      setLeaderboard(lb as unknown as LeaderboardEntry[]);
-    }
+    // Game-specific leaderboards derive from profiles for now
+    setLeaderboard([]);
 
     setLoading(false);
   };
