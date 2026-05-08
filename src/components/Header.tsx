@@ -30,7 +30,7 @@ const Header = () => {
             <div className="w-10 h-10 bg-crimson flex items-center justify-center">
               <span className="font-heading text-white text-lg">ZH</span>
             </div>
-            <span className="font-heading text-2xl text-white tracking-wide">ZERO HOUR</span>
+            <span className="font-heading text-2xl text-white tracking-wide">eArena</span>
           </Link>
 
           {/* Desktop Navigation */}

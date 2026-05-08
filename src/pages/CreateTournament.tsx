@@ -167,7 +167,7 @@ export default function CreateTournament() {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Zero Hour Championship Series"
+                    placeholder="eArena Championship Series"
                     className="bg-background border-border focus:border-crimson"
                   />
                   {errors.name && <p className="text-sm text-crimson">{errors.name}</p>}
