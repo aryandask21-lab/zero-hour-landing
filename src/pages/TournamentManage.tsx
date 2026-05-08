@@ -127,6 +127,28 @@ export default function TournamentManage() {
   const [team2Score, setTeam2Score] = useState("0");
   const [winnerId, setWinnerId] = useState("");
 
+  // Schedule state
+  const [schedulingMatch, setSchedulingMatch] = useState<Match | null>(null);
+  const [scheduleValue, setScheduleValue] = useState("");
+
+  const handleSaveSchedule = async () => {
+    if (!schedulingMatch) return;
+    try {
+      const iso = scheduleValue ? new Date(scheduleValue).toISOString() : null;
+      const { error } = await supabase
+        .from("matches")
+        .update({ scheduled_time: iso })
+        .eq("id", schedulingMatch.id);
+      if (error) throw error;
+      toast({ title: "Match scheduled" });
+      setSchedulingMatch(null);
+      setScheduleValue("");
+      fetchAll();
+    } catch {
+      toast({ title: "Error", description: "Failed to set time", variant: "destructive" });
+    }
+  };
+
   // Player stats state
   const [statsMatch, setStatsMatch] = useState<Match | null>(null);
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
@@ -620,8 +642,24 @@ export default function TournamentManage() {
                               {match.team2?.tag ? `[${match.team2.tag}] ` : ""}{match.team2?.name || "TBD"}
                             </span>
                           </div>
+                          {match.scheduled_time && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(match.scheduled_time).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSchedulingMatch(match);
+                              setScheduleValue(match.scheduled_time ? new Date(match.scheduled_time).toISOString().slice(0, 16) : "");
+                            }}
+                          >
+                            <Calendar className="w-4 h-4 mr-1" /> {match.scheduled_time ? "Reschedule" : "Schedule"}
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => openStatsDialog(match)}>
                             <BarChart3 className="w-4 h-4 mr-1" /> Stats
                           </Button>
@@ -904,6 +942,48 @@ export default function TournamentManage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule match dialog */}
+      <Dialog open={!!schedulingMatch} onOpenChange={(o) => !o && setSchedulingMatch(null)}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-white">Schedule Match</DialogTitle>
+          </DialogHeader>
+          {schedulingMatch && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                R{schedulingMatch.round} M{schedulingMatch.match_number} —{" "}
+                {schedulingMatch.team1?.name || "TBD"} vs {schedulingMatch.team2?.name || "TBD"}
+              </p>
+              <div>
+                <label className="text-sm text-muted-foreground">Date &amp; time</label>
+                <Input
+                  type="datetime-local"
+                  value={scheduleValue}
+                  onChange={(e) => setScheduleValue(e.target.value)}
+                  className="bg-background border-border mt-1"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveSchedule} className="flex-1 bg-crimson hover:bg-primary">
+                  Save Time
+                </Button>
+                {schedulingMatch.scheduled_time && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setScheduleValue("");
+                      handleSaveSchedule();
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
