@@ -70,7 +70,7 @@ const HeroSection = () => {
             className="font-heading text-7xl sm:text-8xl lg:text-9xl text-crimson glow-red opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s" }}
           >
-            ZERO HOUR
+            eArena
           </h1>
 
           {/* Subtitle */}

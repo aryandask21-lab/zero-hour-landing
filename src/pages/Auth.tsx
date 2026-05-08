@@ -62,7 +62,7 @@ export default function Auth() {
         } else {
           toast({
             title: "Account created",
-            description: "Welcome to Zero Hour Esports!"
+            description: "Welcome to eArena!"
           });
           navigate("/dashboard");
         }
@@ -122,7 +122,7 @@ export default function Auth() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Target className="w-8 h-8 text-crimson" />
-            <span className="font-heading text-2xl text-crimson glow-red">ZERO HOUR</span>
+            <span className="font-heading text-2xl text-crimson glow-red">eArena</span>
           </div>
           <h1 className="font-heading text-3xl text-white">
             {isSignUp ? "CREATE ACCOUNT" : "OPERATOR LOGIN"}

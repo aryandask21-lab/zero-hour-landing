@@ -27,7 +27,7 @@ const Footer = () => {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
-              <span className="font-heading text-2xl text-white">ZERO HOUR</span>
+              <span className="font-heading text-2xl text-white">eArena</span>
             </div>
             <p className="text-muted-foreground text-sm mb-6 max-w-xs">
               A tactical first-person shooter developed in Bangladesh. Experience realistic close-quarter combat.
@@ -104,7 +104,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-border/30 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-muted-foreground text-sm">
-            © 2024 Zero Hour. All rights reserved.
+            © 2026 eArena. All rights reserved.
           </p>
           <p className="text-muted-foreground text-xs">
             Made with passion in Bangladesh 🇧🇩
