@@ -127,6 +127,28 @@ export default function TournamentManage() {
   const [team2Score, setTeam2Score] = useState("0");
   const [winnerId, setWinnerId] = useState("");
 
+  // Schedule state
+  const [schedulingMatch, setSchedulingMatch] = useState<Match | null>(null);
+  const [scheduleValue, setScheduleValue] = useState("");
+
+  const handleSaveSchedule = async () => {
+    if (!schedulingMatch) return;
+    try {
+      const iso = scheduleValue ? new Date(scheduleValue).toISOString() : null;
+      const { error } = await supabase
+        .from("matches")
+        .update({ scheduled_time: iso })
+        .eq("id", schedulingMatch.id);
+      if (error) throw error;
+      toast({ title: "Match scheduled" });
+      setSchedulingMatch(null);
+      setScheduleValue("");
+      fetchAll();
+    } catch {
+      toast({ title: "Error", description: "Failed to set time", variant: "destructive" });
+    }
+  };
+
   // Player stats state
   const [statsMatch, setStatsMatch] = useState<Match | null>(null);
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
