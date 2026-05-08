@@ -642,8 +642,24 @@ export default function TournamentManage() {
                               {match.team2?.tag ? `[${match.team2.tag}] ` : ""}{match.team2?.name || "TBD"}
                             </span>
                           </div>
+                          {match.scheduled_time && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(match.scheduled_time).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSchedulingMatch(match);
+                              setScheduleValue(match.scheduled_time ? new Date(match.scheduled_time).toISOString().slice(0, 16) : "");
+                            }}
+                          >
+                            <Calendar className="w-4 h-4 mr-1" /> {match.scheduled_time ? "Reschedule" : "Schedule"}
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => openStatsDialog(match)}>
                             <BarChart3 className="w-4 h-4 mr-1" /> Stats
                           </Button>
