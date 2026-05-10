@@ -194,6 +194,27 @@ export default function CreateTournament() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="game">Game</Label>
+                    <Select
+                      value={formData.game}
+                      onValueChange={(value) => setFormData(prev => ({
+                        ...prev,
+                        game: value,
+                        game_mode: GAME_MODES[value]?.[0] ?? "Mixed",
+                        team_size: value === "BGMI" ? 4 : 5,
+                      }))}
+                    >
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BGMI">Battlegrounds Mobile India (BGMI)</SelectItem>
+                        <SelectItem value="Tactical FPS">Tactical FPS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="game_mode">Game Mode</Label>
                     <Select
                       value={formData.game_mode}
@@ -203,13 +224,15 @@ export default function CreateTournament() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Bomb Defusal">Bomb Defusal</SelectItem>
-                        <SelectItem value="Hostage Rescue">Hostage Rescue</SelectItem>
-                        <SelectItem value="Co-op">Co-op</SelectItem>
-                        <SelectItem value="Mixed">Mixed Modes</SelectItem>
+                        {(GAME_MODES[formData.game] ?? []).map((mode) => (
+                          <SelectItem key={mode} value={mode}>{mode}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                   <div className="space-y-2">
                     <Label htmlFor="bracket_type">Bracket Type</Label>
