@@ -246,8 +246,9 @@ export default function TournamentDetail() {
                       <p className="text-white font-heading">{tournament.team_size}v{tournament.team_size}</p>
                     </div>
                     <div className="bg-background/50 p-3">
-                      <p className="text-muted-foreground text-xs uppercase">Mode</p>
-                      <p className="text-white font-heading">{tournament.game_mode || "Bomb Defusal"}</p>
+                      <p className="text-muted-foreground text-xs uppercase">Game</p>
+                      <p className="text-white font-heading">{tournament.game || "Tactical FPS"}</p>
+                      <p className="text-muted-foreground text-xs mt-1">{tournament.game_mode || "Mixed"}</p>
                     </div>
                     <div className="bg-background/50 p-3">
                       <p className="text-muted-foreground text-xs uppercase">Bracket</p>
