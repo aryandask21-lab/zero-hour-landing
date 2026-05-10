@@ -95,6 +95,7 @@ export default function CreateTournament() {
           creator_id: user.id,
           name: formData.name,
           description: formData.description || null,
+          game: formData.game,
           game_mode: formData.game_mode,
           team_size: formData.team_size,
           max_teams: formData.max_teams || null,
