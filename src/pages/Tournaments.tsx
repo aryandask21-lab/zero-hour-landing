@@ -14,6 +14,7 @@ interface Tournament {
   id: string;
   name: string;
   description: string | null;
+  game: string | null;
   game_mode: string | null;
   team_size: number;
   max_teams: number | null;
@@ -196,7 +197,7 @@ export default function Tournaments() {
                               {tournament.name}
                             </h3>
                             <p className="text-muted-foreground text-sm">
-                              {tournament.game_mode || "Bomb Defusal"}
+                              {tournament.game || "Tactical FPS"} · {tournament.game_mode || "Mixed"}
                             </p>
                           </div>
                         </div>

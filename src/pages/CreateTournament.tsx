@@ -14,9 +14,15 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Trophy, Target } from "lucide-react";
 import { z } from "zod";
 
+const GAME_MODES: Record<string, string[]> = {
+  "BGMI": ["Battle Royale - Solo", "Battle Royale - Duo", "Battle Royale - Squad", "TDM", "Arena", "Mixed"],
+  "Tactical FPS": ["Bomb Defusal", "Hostage Rescue", "Co-op", "Mixed"],
+};
+
 const tournamentSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100, "Name must be less than 100 characters"),
   description: z.string().max(2000, "Description must be less than 2000 characters").optional(),
+  game: z.string().min(1),
   game_mode: z.string(),
   team_size: z.number().min(1).max(10),
   max_teams: z.number().min(2).max(128).optional(),
@@ -38,8 +44,9 @@ export default function CreateTournament() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    game_mode: "Bomb Defusal",
-    team_size: 5,
+    game: "BGMI",
+    game_mode: "Battle Royale - Squad",
+    team_size: 4,
     max_teams: 16,
     prize_pool: "",
     rules: "",
@@ -88,6 +95,7 @@ export default function CreateTournament() {
           creator_id: user.id,
           name: formData.name,
           description: formData.description || null,
+          game: formData.game,
           game_mode: formData.game_mode,
           team_size: formData.team_size,
           max_teams: formData.max_teams || null,
@@ -186,6 +194,27 @@ export default function CreateTournament() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="game">Game</Label>
+                    <Select
+                      value={formData.game}
+                      onValueChange={(value) => setFormData(prev => ({
+                        ...prev,
+                        game: value,
+                        game_mode: GAME_MODES[value]?.[0] ?? "Mixed",
+                        team_size: value === "BGMI" ? 4 : 5,
+                      }))}
+                    >
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BGMI">Battlegrounds Mobile India (BGMI)</SelectItem>
+                        <SelectItem value="Tactical FPS">Tactical FPS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="game_mode">Game Mode</Label>
                     <Select
                       value={formData.game_mode}
@@ -195,13 +224,15 @@ export default function CreateTournament() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Bomb Defusal">Bomb Defusal</SelectItem>
-                        <SelectItem value="Hostage Rescue">Hostage Rescue</SelectItem>
-                        <SelectItem value="Co-op">Co-op</SelectItem>
-                        <SelectItem value="Mixed">Mixed Modes</SelectItem>
+                        {(GAME_MODES[formData.game] ?? []).map((mode) => (
+                          <SelectItem key={mode} value={mode}>{mode}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                   <div className="space-y-2">
                     <Label htmlFor="bracket_type">Bracket Type</Label>
