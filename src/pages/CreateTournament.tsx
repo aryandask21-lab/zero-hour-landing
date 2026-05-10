@@ -44,8 +44,9 @@ export default function CreateTournament() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    game_mode: "Bomb Defusal",
-    team_size: 5,
+    game: "BGMI",
+    game_mode: "Battle Royale - Squad",
+    team_size: 4,
     max_teams: 16,
     prize_pool: "",
     rules: "",
