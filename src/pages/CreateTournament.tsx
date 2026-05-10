@@ -14,9 +14,15 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Trophy, Target } from "lucide-react";
 import { z } from "zod";
 
+const GAME_MODES: Record<string, string[]> = {
+  "BGMI": ["Battle Royale - Solo", "Battle Royale - Duo", "Battle Royale - Squad", "TDM", "Arena", "Mixed"],
+  "Tactical FPS": ["Bomb Defusal", "Hostage Rescue", "Co-op", "Mixed"],
+};
+
 const tournamentSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100, "Name must be less than 100 characters"),
   description: z.string().max(2000, "Description must be less than 2000 characters").optional(),
+  game: z.string().min(1),
   game_mode: z.string(),
   team_size: z.number().min(1).max(10),
   max_teams: z.number().min(2).max(128).optional(),
