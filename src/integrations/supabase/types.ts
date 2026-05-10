@@ -964,6 +964,7 @@ export type Database = {
           end_time: string | null
           entry_fee: number | null
           featured: boolean | null
+          game: string
           game_mode: string | null
           id: string
           livestream_url: string | null
@@ -992,6 +993,7 @@ export type Database = {
           end_time?: string | null
           entry_fee?: number | null
           featured?: boolean | null
+          game?: string
           game_mode?: string | null
           id?: string
           livestream_url?: string | null
@@ -1020,6 +1022,7 @@ export type Database = {
           end_time?: string | null
           entry_fee?: number | null
           featured?: boolean | null
+          game?: string
           game_mode?: string | null
           id?: string
           livestream_url?: string | null
