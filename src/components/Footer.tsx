@@ -107,7 +107,7 @@ const Footer = () => {
             © 2026 eArena. All rights reserved.
           </p>
           <p className="text-muted-foreground text-xs">
-            Made with passion in Bangladesh 🇧🇩
+            Made with passion in India 🇮🇳
           </p>
         </div>
       </div>
