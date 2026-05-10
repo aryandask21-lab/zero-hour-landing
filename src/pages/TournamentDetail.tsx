@@ -16,6 +16,7 @@ interface Tournament {
   id: string;
   name: string;
   description: string | null;
+  game: string | null;
   game_mode: string | null;
   team_size: number;
   max_teams: number | null;
