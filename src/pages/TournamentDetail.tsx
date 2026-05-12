@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, Users, Trophy, Settings, UserPlus, Calendar, Target, Video, Clock } from "lucide-react";
+import { formatIST } from "@/lib/datetime";
 
 interface Tournament {
   id: string;
@@ -107,6 +108,9 @@ export default function TournamentDetail() {
 
   const fetchTournament = async () => {
     try {
+      // Auto-close any tournaments past their registration deadline
+      await supabase.rpc("auto_close_expired_registrations");
+
       const { data: tournamentData, error } = await supabase
         .from("tournaments")
         .select(`*, creator:profiles!tournaments_creator_id_fkey(username)`)
@@ -406,7 +410,7 @@ export default function TournamentDetail() {
                         <Calendar className="w-4 h-4 text-crimson" />
                         <div>
                           <p className="text-muted-foreground text-xs">Registration Deadline</p>
-                          <p className="text-white">{new Date(tournament.registration_deadline).toLocaleString()}</p>
+                          <p className="text-white">{formatIST(tournament.registration_deadline)}</p>
                         </div>
                       </div>
                     )}
@@ -415,7 +419,7 @@ export default function TournamentDetail() {
                         <Calendar className="w-4 h-4 text-crimson" />
                         <div>
                           <p className="text-muted-foreground text-xs">Tournament Start</p>
-                          <p className="text-white">{new Date(tournament.start_time).toLocaleString()}</p>
+                          <p className="text-white">{formatIST(tournament.start_time)}</p>
                         </div>
                       </div>
                     )}
