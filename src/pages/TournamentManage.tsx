@@ -700,7 +700,7 @@ export default function TournamentManage() {
                           {match.scheduled_time && (
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {new Date(match.scheduled_time).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              {formatISTShort(match.scheduled_time)}
                             </span>
                           )}
                         </div>
@@ -710,7 +710,7 @@ export default function TournamentManage() {
                             variant="outline"
                             onClick={() => {
                               setSchedulingMatch(match);
-                              setScheduleValue(match.scheduled_time ? new Date(match.scheduled_time).toISOString().slice(0, 16) : "");
+                              setScheduleValue(isoToISTLocalInput(match.scheduled_time));
                             }}
                           >
                             <Calendar className="w-4 h-4 mr-1" /> {match.scheduled_time ? "Reschedule" : "Schedule"}
