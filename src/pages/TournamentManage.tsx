@@ -916,7 +916,43 @@ export default function TournamentManage() {
                   <div><span className="text-muted-foreground">Max Teams:</span> <span className="text-white ml-2">{tournament.max_teams || "Unlimited"}</span></div>
                   <div><span className="text-muted-foreground">Entry Fee:</span> <span className="text-white ml-2">{tournament.entry_fee || 0} credits</span></div>
                   <div><span className="text-muted-foreground">Prize Pool:</span> <span className="text-white ml-2">{tournament.prize_pool || "None"}</span></div>
-                  <div><span className="text-muted-foreground">Start:</span> <span className="text-white ml-2">{tournament.start_time ? new Date(tournament.start_time).toLocaleString() : "TBD"}</span></div>
+                  <div><span className="text-muted-foreground">Start:</span> <span className="text-white ml-2">{tournament.start_time ? formatIST(tournament.start_time) : "TBD"}</span></div>
+                  <div><span className="text-muted-foreground">Reg. Deadline:</span> <span className="text-white ml-2">{tournament.registration_deadline ? formatIST(tournament.registration_deadline) : "—"}</span></div>
+                </div>
+
+                {/* Edit Schedule (IST) */}
+                <div className="pt-4 border-t border-border space-y-3">
+                  <h4 className="font-heading text-base text-white">Edit Schedule (IST)</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Times are entered and shown in Indian Standard Time (UTC+5:30). When the registration deadline passes, registration closes automatically.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Registration Deadline</label>
+                      <Input
+                        type="datetime-local"
+                        value={editRegDeadline}
+                        onChange={(e) => setEditRegDeadline(e.target.value)}
+                        className="bg-background border-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Tournament Start</label>
+                      <Input
+                        type="datetime-local"
+                        value={editStartTime}
+                        onChange={(e) => setEditStartTime(e.target.value)}
+                        className="bg-background border-border mt-1"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleSaveTournamentSchedule}
+                    disabled={savingSchedule}
+                    className="bg-crimson hover:bg-primary"
+                  >
+                    {savingSchedule ? "Saving..." : "Save Schedule"}
+                  </Button>
                 </div>
 
                 {tournament.status !== "completed" && (
