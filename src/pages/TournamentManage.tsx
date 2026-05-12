@@ -1057,7 +1057,7 @@ export default function TournamentManage() {
                 {schedulingMatch.team1?.name || "TBD"} vs {schedulingMatch.team2?.name || "TBD"}
               </p>
               <div>
-                <label className="text-sm text-muted-foreground">Date &amp; time</label>
+                <label className="text-sm text-muted-foreground">Date &amp; time (IST)</label>
                 <Input
                   type="datetime-local"
                   value={scheduleValue}
