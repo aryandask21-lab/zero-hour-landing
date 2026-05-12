@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Shield, ChevronRight, Clock, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatISTShort } from "@/lib/datetime";
 
 interface Match {
   id: string;
@@ -217,12 +218,7 @@ function MatchCard({ match }: { match: Match }) {
         <div className="px-3 py-1 bg-background/30 border-t border-border">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
-            {new Date(match.scheduled_time).toLocaleString(undefined, {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit"
-            })}
+            {formatISTShort(match.scheduled_time)}
           </div>
         </div>
       )}

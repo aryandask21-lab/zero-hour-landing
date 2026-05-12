@@ -53,6 +53,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
+import { formatIST, formatISTShort, isoToISTLocalInput, istLocalInputToISO } from "@/lib/datetime";
 
 interface Tournament {
   id: string;
@@ -65,6 +66,9 @@ interface Tournament {
   match_format: string | null;
   status: string;
   start_time: string | null;
+  registration_deadline: string | null;
+  check_in_start: string | null;
+  check_in_end: string | null;
   entry_fee: number | null;
   prize_pool: string | null;
   creator_id: string;
@@ -134,18 +138,45 @@ export default function TournamentManage() {
   const handleSaveSchedule = async () => {
     if (!schedulingMatch) return;
     try {
-      const iso = scheduleValue ? new Date(scheduleValue).toISOString() : null;
+      const iso = scheduleValue ? istLocalInputToISO(scheduleValue) : null;
       const { error } = await supabase
         .from("matches")
         .update({ scheduled_time: iso })
         .eq("id", schedulingMatch.id);
       if (error) throw error;
-      toast({ title: "Match scheduled" });
+      toast({ title: "Match scheduled (IST)" });
       setSchedulingMatch(null);
       setScheduleValue("");
       fetchAll();
     } catch {
       toast({ title: "Error", description: "Failed to set time", variant: "destructive" });
+    }
+  };
+
+  // Tournament schedule editor (registration deadline + start time)
+  const [editRegDeadline, setEditRegDeadline] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [savingSchedule, setSavingSchedule] = useState(false);
+
+  const handleSaveTournamentSchedule = async () => {
+    if (!tournament) return;
+    setSavingSchedule(true);
+    try {
+      const payload: Record<string, string | null> = {
+        registration_deadline: editRegDeadline ? istLocalInputToISO(editRegDeadline) : null,
+        start_time: editStartTime ? istLocalInputToISO(editStartTime) : null,
+      };
+      const { error } = await supabase.from("tournaments").update(payload).eq("id", tournament.id);
+      if (error) throw error;
+      // If new deadline already passed, immediately close registration
+      await supabase.rpc("auto_close_expired_registrations");
+      toast({ title: "Schedule updated", description: "Times saved in IST." });
+      fetchAll();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update schedule";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setSavingSchedule(false);
     }
   };
 
@@ -163,6 +194,9 @@ export default function TournamentManage() {
   const fetchAll = async () => {
     if (!id) return;
     try {
+      // Auto-close expired registrations before reading
+      await supabase.rpc("auto_close_expired_registrations");
+
       const [tournamentRes, regsRes, matchesRes] = await Promise.all([
         supabase.from("tournaments").select("*").eq("id", id).maybeSingle(),
         supabase.from("tournament_registrations").select("*, team:teams(id, name, tag)").eq("tournament_id", id),
@@ -183,6 +217,8 @@ export default function TournamentManage() {
       setTournament(tournamentRes.data);
       setRegistrations(regsRes.data || []);
       setMatches((matchesRes.data || []) as Match[]);
+      setEditRegDeadline(isoToISTLocalInput(tournamentRes.data.registration_deadline));
+      setEditStartTime(isoToISTLocalInput(tournamentRes.data.start_time));
     } catch (err) {
       console.error(err);
     } finally {
@@ -383,6 +419,25 @@ export default function TournamentManage() {
     if (nextMatch) {
       const update = isTeam1 ? { team1_id: winnerTeamId } : { team2_id: winnerTeamId };
       await supabase.from("matches").update(update).eq("id", nextMatch.id);
+    }
+  };
+
+  const handleSaveLiveScore = async () => {
+    if (!editingMatch) return;
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          team1_score: parseInt(team1Score) || 0,
+          team2_score: parseInt(team2Score) || 0,
+          status: "in_progress",
+        })
+        .eq("id", editingMatch.id);
+      if (error) throw error;
+      toast({ title: "Live score updated" });
+      fetchAll();
+    } catch {
+      toast({ title: "Error", description: "Failed to save live score", variant: "destructive" });
     }
   };
 
@@ -645,7 +700,7 @@ export default function TournamentManage() {
                           {match.scheduled_time && (
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {new Date(match.scheduled_time).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              {formatISTShort(match.scheduled_time)}
                             </span>
                           )}
                         </div>
@@ -655,7 +710,7 @@ export default function TournamentManage() {
                             variant="outline"
                             onClick={() => {
                               setSchedulingMatch(match);
-                              setScheduleValue(match.scheduled_time ? new Date(match.scheduled_time).toISOString().slice(0, 16) : "");
+                              setScheduleValue(isoToISTLocalInput(match.scheduled_time));
                             }}
                           >
                             <Calendar className="w-4 h-4 mr-1" /> {match.scheduled_time ? "Reschedule" : "Schedule"}
@@ -705,9 +760,17 @@ export default function TournamentManage() {
                                     </SelectContent>
                                   </Select>
                                 </div>
-                                <Button onClick={handleUpdateResult} className="w-full bg-crimson hover:bg-primary">
-                                  Save Result
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button onClick={handleSaveLiveScore} variant="outline" className="flex-1">
+                                    Save Live Score
+                                  </Button>
+                                  <Button onClick={handleUpdateResult} className="flex-1 bg-crimson hover:bg-primary">
+                                    Finalize Result
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Use <strong>Save Live Score</strong> to push live updates without ending the match. <strong>Finalize Result</strong> requires a winner and locks the match.
+                                </p>
                               </div>
                             </DialogContent>
                           </Dialog>
@@ -853,7 +916,43 @@ export default function TournamentManage() {
                   <div><span className="text-muted-foreground">Max Teams:</span> <span className="text-white ml-2">{tournament.max_teams || "Unlimited"}</span></div>
                   <div><span className="text-muted-foreground">Entry Fee:</span> <span className="text-white ml-2">{tournament.entry_fee || 0} credits</span></div>
                   <div><span className="text-muted-foreground">Prize Pool:</span> <span className="text-white ml-2">{tournament.prize_pool || "None"}</span></div>
-                  <div><span className="text-muted-foreground">Start:</span> <span className="text-white ml-2">{tournament.start_time ? new Date(tournament.start_time).toLocaleString() : "TBD"}</span></div>
+                  <div><span className="text-muted-foreground">Start:</span> <span className="text-white ml-2">{tournament.start_time ? formatIST(tournament.start_time) : "TBD"}</span></div>
+                  <div><span className="text-muted-foreground">Reg. Deadline:</span> <span className="text-white ml-2">{tournament.registration_deadline ? formatIST(tournament.registration_deadline) : "—"}</span></div>
+                </div>
+
+                {/* Edit Schedule (IST) */}
+                <div className="pt-4 border-t border-border space-y-3">
+                  <h4 className="font-heading text-base text-white">Edit Schedule (IST)</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Times are entered and shown in Indian Standard Time (UTC+5:30). When the registration deadline passes, registration closes automatically.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Registration Deadline</label>
+                      <Input
+                        type="datetime-local"
+                        value={editRegDeadline}
+                        onChange={(e) => setEditRegDeadline(e.target.value)}
+                        className="bg-background border-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Tournament Start</label>
+                      <Input
+                        type="datetime-local"
+                        value={editStartTime}
+                        onChange={(e) => setEditStartTime(e.target.value)}
+                        className="bg-background border-border mt-1"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleSaveTournamentSchedule}
+                    disabled={savingSchedule}
+                    className="bg-crimson hover:bg-primary"
+                  >
+                    {savingSchedule ? "Saving..." : "Save Schedule"}
+                  </Button>
                 </div>
 
                 {tournament.status !== "completed" && (
@@ -958,7 +1057,7 @@ export default function TournamentManage() {
                 {schedulingMatch.team1?.name || "TBD"} vs {schedulingMatch.team2?.name || "TBD"}
               </p>
               <div>
-                <label className="text-sm text-muted-foreground">Date &amp; time</label>
+                <label className="text-sm text-muted-foreground">Date &amp; time (IST)</label>
                 <Input
                   type="datetime-local"
                   value={scheduleValue}

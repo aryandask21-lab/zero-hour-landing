@@ -13,6 +13,7 @@ import {
   Trophy, Users, Shield, Plus, Calendar, ChevronRight, Target, 
   Swords, Bell, Wallet, TrendingUp, Clock, CheckCircle2 
 } from "lucide-react";
+import { formatIST } from "@/lib/datetime";
 import { formatDistanceToNow } from "date-fns";
 
 interface Team {
@@ -484,7 +485,7 @@ export default function Dashboard() {
                           </span>
                           {tournament.start_time && (
                             <p className="text-muted-foreground text-sm mt-1">
-                              {new Date(tournament.start_time).toLocaleDateString()}
+                              {formatIST(tournament.start_time, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
                             </p>
                           )}
                         </div>

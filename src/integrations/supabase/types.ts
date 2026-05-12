@@ -1149,6 +1149,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_close_expired_registrations: { Args: never; Returns: number }
       can_dispute_match: { Args: { match_uuid: string }; Returns: boolean }
       has_profile: { Args: { user_uuid?: string }; Returns: boolean }
       has_role: {
