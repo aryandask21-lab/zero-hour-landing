@@ -760,9 +760,17 @@ export default function TournamentManage() {
                                     </SelectContent>
                                   </Select>
                                 </div>
-                                <Button onClick={handleUpdateResult} className="w-full bg-crimson hover:bg-primary">
-                                  Save Result
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button onClick={handleSaveLiveScore} variant="outline" className="flex-1">
+                                    Save Live Score
+                                  </Button>
+                                  <Button onClick={handleUpdateResult} className="flex-1 bg-crimson hover:bg-primary">
+                                    Finalize Result
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Use <strong>Save Live Score</strong> to push live updates without ending the match. <strong>Finalize Result</strong> requires a winner and locks the match.
+                                </p>
                               </div>
                             </DialogContent>
                           </Dialog>
