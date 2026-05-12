@@ -138,18 +138,45 @@ export default function TournamentManage() {
   const handleSaveSchedule = async () => {
     if (!schedulingMatch) return;
     try {
-      const iso = scheduleValue ? new Date(scheduleValue).toISOString() : null;
+      const iso = scheduleValue ? istLocalInputToISO(scheduleValue) : null;
       const { error } = await supabase
         .from("matches")
         .update({ scheduled_time: iso })
         .eq("id", schedulingMatch.id);
       if (error) throw error;
-      toast({ title: "Match scheduled" });
+      toast({ title: "Match scheduled (IST)" });
       setSchedulingMatch(null);
       setScheduleValue("");
       fetchAll();
     } catch {
       toast({ title: "Error", description: "Failed to set time", variant: "destructive" });
+    }
+  };
+
+  // Tournament schedule editor (registration deadline + start time)
+  const [editRegDeadline, setEditRegDeadline] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [savingSchedule, setSavingSchedule] = useState(false);
+
+  const handleSaveTournamentSchedule = async () => {
+    if (!tournament) return;
+    setSavingSchedule(true);
+    try {
+      const payload: Record<string, string | null> = {
+        registration_deadline: editRegDeadline ? istLocalInputToISO(editRegDeadline) : null,
+        start_time: editStartTime ? istLocalInputToISO(editStartTime) : null,
+      };
+      const { error } = await supabase.from("tournaments").update(payload).eq("id", tournament.id);
+      if (error) throw error;
+      // If new deadline already passed, immediately close registration
+      await supabase.rpc("auto_close_expired_registrations");
+      toast({ title: "Schedule updated", description: "Times saved in IST." });
+      fetchAll();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update schedule";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setSavingSchedule(false);
     }
   };
 
