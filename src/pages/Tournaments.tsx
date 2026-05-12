@@ -8,6 +8,7 @@ import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trophy, Calendar, Users, Search, Plus, Target } from "lucide-react";
+import { formatIST } from "@/lib/datetime";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Tournament {
@@ -39,6 +40,9 @@ export default function Tournaments() {
 
   const fetchTournaments = async () => {
     try {
+      // Auto-close any tournaments past their registration deadline
+      await supabase.rpc("auto_close_expired_registrations");
+
       const { data, error } = await supabase
         .from("tournaments")
         .select("*")
@@ -225,7 +229,7 @@ export default function Tournaments() {
                         {tournament.start_time && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar size={14} />
-                            <span>{new Date(tournament.start_time).toLocaleDateString()}</span>
+                            <span>{formatIST(tournament.start_time, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}</span>
                           </div>
                         )}
                       </div>
