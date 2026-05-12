@@ -194,6 +194,9 @@ export default function TournamentManage() {
   const fetchAll = async () => {
     if (!id) return;
     try {
+      // Auto-close expired registrations before reading
+      await supabase.rpc("auto_close_expired_registrations");
+
       const [tournamentRes, regsRes, matchesRes] = await Promise.all([
         supabase.from("tournaments").select("*").eq("id", id).maybeSingle(),
         supabase.from("tournament_registrations").select("*, team:teams(id, name, tag)").eq("tournament_id", id),
@@ -214,6 +217,8 @@ export default function TournamentManage() {
       setTournament(tournamentRes.data);
       setRegistrations(regsRes.data || []);
       setMatches((matchesRes.data || []) as Match[]);
+      setEditRegDeadline(isoToISTLocalInput(tournamentRes.data.registration_deadline));
+      setEditStartTime(isoToISTLocalInput(tournamentRes.data.start_time));
     } catch (err) {
       console.error(err);
     } finally {
