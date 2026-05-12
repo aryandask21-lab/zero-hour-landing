@@ -422,6 +422,25 @@ export default function TournamentManage() {
     }
   };
 
+  const handleSaveLiveScore = async () => {
+    if (!editingMatch) return;
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          team1_score: parseInt(team1Score) || 0,
+          team2_score: parseInt(team2Score) || 0,
+          status: "in_progress",
+        })
+        .eq("id", editingMatch.id);
+      if (error) throw error;
+      toast({ title: "Live score updated" });
+      fetchAll();
+    } catch {
+      toast({ title: "Error", description: "Failed to save live score", variant: "destructive" });
+    }
+  };
+
   const handleUpdateResult = async () => {
     if (!editingMatch || !winnerId) {
       toast({ title: "Error", description: "Select a winner", variant: "destructive" });
