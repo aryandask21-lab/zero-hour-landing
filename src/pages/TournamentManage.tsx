@@ -53,6 +53,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { TournamentStatusStepper } from "@/components/TournamentStatusStepper";
+import { formatIST, formatISTShort, isoToISTLocalInput, istLocalInputToISO } from "@/lib/datetime";
 
 interface Tournament {
   id: string;
@@ -65,6 +66,9 @@ interface Tournament {
   match_format: string | null;
   status: string;
   start_time: string | null;
+  registration_deadline: string | null;
+  check_in_start: string | null;
+  check_in_end: string | null;
   entry_fee: number | null;
   prize_pool: string | null;
   creator_id: string;
