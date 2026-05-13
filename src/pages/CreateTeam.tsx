@@ -34,7 +34,8 @@ export default function CreateTeam() {
     description: "",
     max_members: 5
   });
-  const [memberCallsigns, setMemberCallsigns] = useState("");
+  // Array of callsigns, length === max_members. Slot 0 = leader (owner), disabled.
+  const [memberInputs, setMemberInputs] = useState<string[]>(Array(5).fill(""));
 
   if (!user) {
     navigate("/auth");
@@ -79,9 +80,9 @@ export default function CreateTeam() {
 
       if (error) throw error;
 
-      // Add members by callsign (username)
-      const callsigns = memberCallsigns
-        .split(/[\n,]+/)
+      // Collect non-empty callsigns from member inputs (skip slot 0 = owner)
+      const callsigns = memberInputs
+        .slice(1)
         .map(s => s.trim())
         .filter(Boolean);
 
@@ -202,7 +203,17 @@ export default function CreateTeam() {
                   <Label htmlFor="max_members">Max Team Size</Label>
                   <Select
                     value={formData.max_members.toString()}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, max_members: parseInt(value) }))}
+                    onValueChange={(value) => {
+                      const size = parseInt(value);
+                      setFormData(prev => ({ ...prev, max_members: size }));
+                      setMemberInputs(prev => {
+                        const next = [...prev];
+                        if (size > next.length) {
+                          return [...next, ...Array(size - next.length).fill("")];
+                        }
+                        return next.slice(0, size);
+                      });
+                    }}
                   >
                     <SelectTrigger className="bg-background border-border">
                       <SelectValue />
@@ -219,16 +230,29 @@ export default function CreateTeam() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="members">Add Members (Callsigns)</Label>
-                  <Textarea
-                    id="members"
-                    value={memberCallsigns}
-                    onChange={(e) => setMemberCallsigns(e.target.value)}
-                    placeholder="ghost_07, viper_22, reaper"
-                    className="bg-background border-border focus:border-crimson min-h-[80px]"
-                  />
-                  <p className="text-xs text-muted-foreground">Comma or newline separated. Use existing player callsigns. You're added automatically as leader.</p>
+                <div className="space-y-3">
+                  <Label>Team Members</Label>
+                  {memberInputs.map((val, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        {idx === 0 ? "Leader (You)" : `Member ${idx}`}
+                      </Label>
+                      <Input
+                        value={val}
+                        disabled={idx === 0}
+                        onChange={(e) =>
+                          setMemberInputs(prev => {
+                            const next = [...prev];
+                            next[idx] = e.target.value;
+                            return next;
+                          })
+                        }
+                        placeholder={idx === 0 ? "You are the leader" : "Enter player callsign..."}
+                        className="bg-background border-border focus:border-crimson"
+                      />
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground">Enter existing player callsigns. You're automatically added as leader.</p>
                 </div>
               </div>
 
