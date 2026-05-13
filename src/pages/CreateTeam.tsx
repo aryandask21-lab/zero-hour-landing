@@ -79,9 +79,38 @@ export default function CreateTeam() {
 
       if (error) throw error;
 
+      // Add members by callsign (username)
+      const callsigns = memberCallsigns
+        .split(/[\n,]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      let addedCount = 0;
+      const notFound: string[] = [];
+      if (callsigns.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("username", callsigns);
+
+        const found = new Map((profiles || []).map(p => [p.username.toLowerCase(), p.id]));
+
+        const inserts: { team_id: string; user_id: string; invited_by: string; role: string }[] = [];
+        for (const cs of callsigns) {
+          const uid = found.get(cs.toLowerCase());
+          if (!uid) { notFound.push(cs); continue; }
+          if (uid === user.id) continue; // owner already added by trigger
+          inserts.push({ team_id: data.id, user_id: uid, invited_by: user.id, role: "member" });
+        }
+        if (inserts.length > 0) {
+          const { error: memErr } = await supabase.from("team_members").insert(inserts);
+          if (!memErr) addedCount = inserts.length;
+        }
+      }
+
       toast({
         title: "Team created",
-        description: "Your team has been created successfully"
+        description: `Team ready${addedCount ? `, ${addedCount} member(s) added` : ""}${notFound.length ? `. Not found: ${notFound.join(", ")}` : ""}`
       });
 
       navigate(`/teams/${data.id}`);
