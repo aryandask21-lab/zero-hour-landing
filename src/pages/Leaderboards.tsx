@@ -40,12 +40,24 @@ interface TopPlayer {
   region: string | null;
 }
 
+interface TeamStanding {
+  id: string;
+  name: string;
+  tag: string | null;
+  logo_url: string | null;
+  wins: number;
+  losses: number;
+  points_for: number;
+  points_against: number;
+}
+
 const games = ['All Games', 'Valorant', 'CS2', 'Rainbow Six', 'Overwatch'];
 const regions = ['All Regions', 'NA', 'EU', 'ASIA', 'OCE', 'SA'];
 
 export default function Leaderboards() {
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [teamStandings, setTeamStandings] = useState<TeamStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState('All Games');
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
@@ -77,6 +89,42 @@ export default function Leaderboards() {
 
     // Game-specific leaderboards derive from profiles for now
     setLeaderboard([]);
+
+    // Team standings: aggregate completed matches
+    const { data: completedMatches } = await supabase
+      .from('matches')
+      .select('team1_id, team2_id, team1_score, team2_score, winner_id, status')
+      .eq('status', 'completed');
+
+    const { data: allTeams } = await supabase
+      .from('teams')
+      .select('id, name, tag, logo_url');
+
+    const standingsMap = new Map<string, TeamStanding>();
+    (allTeams || []).forEach(t => {
+      standingsMap.set(t.id, { ...t, wins: 0, losses: 0, points_for: 0, points_against: 0 });
+    });
+    (completedMatches || []).forEach(m => {
+      if (!m.team1_id || !m.team2_id) return;
+      const t1 = standingsMap.get(m.team1_id);
+      const t2 = standingsMap.get(m.team2_id);
+      if (t1) {
+        t1.points_for += m.team1_score || 0;
+        t1.points_against += m.team2_score || 0;
+        if (m.winner_id === m.team1_id) t1.wins++;
+        else if (m.winner_id === m.team2_id) t1.losses++;
+      }
+      if (t2) {
+        t2.points_for += m.team2_score || 0;
+        t2.points_against += m.team1_score || 0;
+        if (m.winner_id === m.team2_id) t2.wins++;
+        else if (m.winner_id === m.team1_id) t2.losses++;
+      }
+    });
+    const standings = Array.from(standingsMap.values())
+      .filter(s => s.wins + s.losses > 0)
+      .sort((a, b) => b.wins - a.wins || (b.points_for - b.points_against) - (a.points_for - a.points_against));
+    setTeamStandings(standings);
 
     setLoading(false);
   };
@@ -149,9 +197,12 @@ export default function Leaderboards() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+          <TabsList className="grid w-full max-w-xl mx-auto grid-cols-3 mb-8">
             <TabsTrigger value="rating" className="gap-2">
               <TrendingUp className="h-4 w-4" /> ELO Rating
+            </TabsTrigger>
+            <TabsTrigger value="teams" className="gap-2">
+              <Users className="h-4 w-4" /> Teams
             </TabsTrigger>
             <TabsTrigger value="tournaments" className="gap-2">
               <Trophy className="h-4 w-4" /> Tournaments
@@ -269,6 +320,59 @@ export default function Leaderboards() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className="text-muted-foreground">{player.region || 'N/A'}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="teams">
+            <div className="bg-card/50 border border-border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-secondary/50">
+                  <tr className="text-left">
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground">RANK</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground">TEAM</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">W</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">L</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">PF</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">PA</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">DIFF</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">Loading...</td></tr>
+                  ) : teamStandings.length === 0 ? (
+                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">No completed matches yet.</td></tr>
+                  ) : (
+                    teamStandings.map((t, index) => (
+                      <tr key={t.id} className="border-t border-border/50 hover:bg-secondary/20 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center w-8">{getRankBadge(index + 1)}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border border-border">
+                              <AvatarImage src={t.logo_url || undefined} />
+                              <AvatarFallback className="font-heading">{t.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium text-white">
+                              {t.tag && <span className="text-crimson">[{t.tag}] </span>}{t.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center text-green-400 font-mono">{t.wins}</td>
+                        <td className="px-6 py-4 text-center text-red-400 font-mono">{t.losses}</td>
+                        <td className="px-6 py-4 text-center text-muted-foreground font-mono">{t.points_for}</td>
+                        <td className="px-6 py-4 text-center text-muted-foreground font-mono">{t.points_against}</td>
+                        <td className="px-6 py-4 text-center font-mono">
+                          <span className={t.points_for - t.points_against >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            {t.points_for - t.points_against >= 0 ? '+' : ''}{t.points_for - t.points_against}
+                          </span>
                         </td>
                       </tr>
                     ))
