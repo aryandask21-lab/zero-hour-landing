@@ -34,6 +34,7 @@ export default function CreateTeam() {
     description: "",
     max_members: 5
   });
+  const [memberCallsigns, setMemberCallsigns] = useState("");
 
   if (!user) {
     navigate("/auth");
