@@ -34,7 +34,8 @@ export default function CreateTeam() {
     description: "",
     max_members: 5
   });
-  const [memberCallsigns, setMemberCallsigns] = useState("");
+  // Array of callsigns, length === max_members. Slot 0 = leader (owner), disabled.
+  const [memberInputs, setMemberInputs] = useState<string[]>(Array(5).fill(""));
 
   if (!user) {
     navigate("/auth");
