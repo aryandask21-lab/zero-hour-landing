@@ -40,12 +40,24 @@ interface TopPlayer {
   region: string | null;
 }
 
+interface TeamStanding {
+  id: string;
+  name: string;
+  tag: string | null;
+  logo_url: string | null;
+  wins: number;
+  losses: number;
+  points_for: number;
+  points_against: number;
+}
+
 const games = ['All Games', 'Valorant', 'CS2', 'Rainbow Six', 'Overwatch'];
 const regions = ['All Regions', 'NA', 'EU', 'ASIA', 'OCE', 'SA'];
 
 export default function Leaderboards() {
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [teamStandings, setTeamStandings] = useState<TeamStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState('All Games');
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
