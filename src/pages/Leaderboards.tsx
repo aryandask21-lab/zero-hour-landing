@@ -329,6 +329,59 @@ export default function Leaderboards() {
             </div>
           </TabsContent>
 
+          <TabsContent value="teams">
+            <div className="bg-card/50 border border-border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-secondary/50">
+                  <tr className="text-left">
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground">RANK</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground">TEAM</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">W</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">L</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">PF</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">PA</th>
+                    <th className="px-6 py-4 font-heading text-sm text-muted-foreground text-center">DIFF</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">Loading...</td></tr>
+                  ) : teamStandings.length === 0 ? (
+                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">No completed matches yet.</td></tr>
+                  ) : (
+                    teamStandings.map((t, index) => (
+                      <tr key={t.id} className="border-t border-border/50 hover:bg-secondary/20 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center w-8">{getRankBadge(index + 1)}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border border-border">
+                              <AvatarImage src={t.logo_url || undefined} />
+                              <AvatarFallback className="font-heading">{t.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium text-white">
+                              {t.tag && <span className="text-crimson">[{t.tag}] </span>}{t.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center text-green-400 font-mono">{t.wins}</td>
+                        <td className="px-6 py-4 text-center text-red-400 font-mono">{t.losses}</td>
+                        <td className="px-6 py-4 text-center text-muted-foreground font-mono">{t.points_for}</td>
+                        <td className="px-6 py-4 text-center text-muted-foreground font-mono">{t.points_against}</td>
+                        <td className="px-6 py-4 text-center font-mono">
+                          <span className={t.points_for - t.points_against >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            {t.points_for - t.points_against >= 0 ? '+' : ''}{t.points_for - t.points_against}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
           <TabsContent value="tournaments">
             <div className="bg-card/50 border border-border rounded-lg overflow-hidden">
               <table className="w-full">
