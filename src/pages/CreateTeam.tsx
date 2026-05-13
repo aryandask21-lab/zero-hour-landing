@@ -217,7 +217,18 @@ export default function CreateTeam() {
                       <SelectItem value="10">10 members</SelectItem>
                     </SelectContent>
                   </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="members">Add Members (Callsigns)</Label>
+                  <Textarea
+                    id="members"
+                    value={memberCallsigns}
+                    onChange={(e) => setMemberCallsigns(e.target.value)}
+                    placeholder="ghost_07, viper_22, reaper"
+                    className="bg-background border-border focus:border-crimson min-h-[80px]"
+                  />
+                  <p className="text-xs text-muted-foreground">Comma or newline separated. Use existing player callsigns. You're added automatically as leader.</p>
                 </div>
+              </div>
               </div>
 
               {/* Submit */}
