@@ -90,6 +90,42 @@ export default function Leaderboards() {
     // Game-specific leaderboards derive from profiles for now
     setLeaderboard([]);
 
+    // Team standings: aggregate completed matches
+    const { data: completedMatches } = await supabase
+      .from('matches')
+      .select('team1_id, team2_id, team1_score, team2_score, winner_id, status')
+      .eq('status', 'completed');
+
+    const { data: allTeams } = await supabase
+      .from('teams')
+      .select('id, name, tag, logo_url');
+
+    const standingsMap = new Map<string, TeamStanding>();
+    (allTeams || []).forEach(t => {
+      standingsMap.set(t.id, { ...t, wins: 0, losses: 0, points_for: 0, points_against: 0 });
+    });
+    (completedMatches || []).forEach(m => {
+      if (!m.team1_id || !m.team2_id) return;
+      const t1 = standingsMap.get(m.team1_id);
+      const t2 = standingsMap.get(m.team2_id);
+      if (t1) {
+        t1.points_for += m.team1_score || 0;
+        t1.points_against += m.team2_score || 0;
+        if (m.winner_id === m.team1_id) t1.wins++;
+        else if (m.winner_id === m.team2_id) t1.losses++;
+      }
+      if (t2) {
+        t2.points_for += m.team2_score || 0;
+        t2.points_against += m.team1_score || 0;
+        if (m.winner_id === m.team2_id) t2.wins++;
+        else if (m.winner_id === m.team1_id) t2.losses++;
+      }
+    });
+    const standings = Array.from(standingsMap.values())
+      .filter(s => s.wins + s.losses > 0)
+      .sort((a, b) => b.wins - a.wins || (b.points_for - b.points_against) - (a.points_for - a.points_against));
+    setTeamStandings(standings);
+
     setLoading(false);
   };
 
