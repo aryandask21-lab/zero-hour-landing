@@ -197,9 +197,12 @@ export default function Leaderboards() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+          <TabsList className="grid w-full max-w-xl mx-auto grid-cols-3 mb-8">
             <TabsTrigger value="rating" className="gap-2">
               <TrendingUp className="h-4 w-4" /> ELO Rating
+            </TabsTrigger>
+            <TabsTrigger value="teams" className="gap-2">
+              <Users className="h-4 w-4" /> Teams
             </TabsTrigger>
             <TabsTrigger value="tournaments" className="gap-2">
               <Trophy className="h-4 w-4" /> Tournaments
